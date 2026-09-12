@@ -1,5 +1,215 @@
-// Purpose: define the persistent domain model for ApplyFlow AI.
-// Codex task: implement the complete schema described in docs/06-DATABASE.md.
-// Include ownership, indexes, enums, timestamps, and relationships.
-// Add constraints needed for duplicate detection and delivery tracking.
-// Do not include real credentials or provider secrets in the schema.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ApplicationStatus {
+  DRAFT
+  ANALYZED
+  READY
+  SENT
+  FOLLOW_UP
+  INTERVIEW
+  REJECTED
+  OFFER
+  CLOSED
+}
+
+enum JobSourceType {
+  SCREENSHOT
+  MANUAL
+}
+
+enum OAuthProvider {
+  GOOGLE
+}
+
+enum AIRequestKind {
+  JOB_EXTRACTION
+  RESUME_PARSING
+  RESUME_MATCHING
+  EMAIL_GENERATION
+  EMAIL_VALIDATION
+}
+
+enum AIRequestStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+model User {
+  id               String            @id @default(cuid())
+  email            String            @unique
+  displayName      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  resumes          Resume[]
+  jobs             Job[]
+  applications     Application[]
+  oauthConnections OAuthConnection[]
+  aiRequests       AIRequest[]
+}
+
+model Resume {
+  id           String         @id @default(cuid())
+  userId       String
+  fileName     String
+  storageKey   String         @unique
+  mimeType     String
+  byteSize     Int
+  isDefault    Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile      ResumeProfile?
+  applications Application[]
+
+  @@index([userId, createdAt])
+  @@index([userId, isDefault])
+}
+
+model ResumeProfile {
+  id        String   @id @default(cuid())
+  resumeId  String   @unique
+  fullName  String?
+  headline  String?
+  email     String?
+  phone     String?
+  location  String?
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+}
+
+model Job {
+  id                         String        @id @default(cuid())
+  userId                     String
+  sourceType                 JobSourceType @default(SCREENSHOT)
+  screenshotStorageKey       String?       @unique
+  company                    String?
+  normalizedCompany          String?
+  title                      String?
+  normalizedTitle            String?
+  location                   String?
+  employmentType             String?
+  experience                 String?
+  skills                     String[]      @default([])
+  description                String?
+  salary                     String?
+  applicationEmail           String?
+  normalizedApplicationEmail String?
+  applicationUrl             String?
+  source                     String?
+  deadline                   DateTime?
+  extractionConfidence       Float?
+  createdAt                  DateTime      @default(now())
+  updatedAt                  DateTime      @updatedAt
+  user                       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application                Application?
+
+  @@index([userId, createdAt])
+  @@index([userId, normalizedCompany, normalizedTitle])
+  @@index([userId, normalizedApplicationEmail])
+}
+
+model Application {
+  id         String             @id @default(cuid())
+  userId     String
+  jobId      String             @unique
+  resumeId   String?
+  status     ApplicationStatus  @default(DRAFT)
+  matchScore Float?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job        Job                @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  resume     Resume?            @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  emails     GeneratedEmail[]
+  deliveries EmailDelivery[]
+  events     ApplicationEvent[]
+
+  @@index([userId, status, updatedAt])
+  @@index([userId, createdAt])
+}
+
+model GeneratedEmail {
+  id            String      @id @default(cuid())
+  applicationId String
+  to            String
+  subject       String
+  body          String
+  isSelected    Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, createdAt])
+}
+
+model EmailDelivery {
+  id                String      @id @default(cuid())
+  applicationId     String
+  generatedEmailId  String?
+  providerMessageId String?     @unique
+  recipient         String
+  sentAt            DateTime?
+  failureCode       String?
+  failureMessage    String?
+  createdAt         DateTime    @default(now())
+  application       Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, createdAt])
+}
+
+model ApplicationEvent {
+  id            String             @id @default(cuid())
+  applicationId String
+  type          String
+  fromStatus    ApplicationStatus?
+  toStatus      ApplicationStatus?
+  metadata      Json?
+  createdAt     DateTime           @default(now())
+  application   Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, createdAt])
+}
+
+model OAuthConnection {
+  id                    String        @id @default(cuid())
+  userId                String
+  provider              OAuthProvider
+  providerAccountId     String
+  encryptedAccessToken  String?
+  encryptedRefreshToken String?
+  expiresAt             DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@unique([provider, providerAccountId])
+}
+
+model AIRequest {
+  id            String          @id @default(cuid())
+  userId        String
+  kind          AIRequestKind
+  status        AIRequestStatus @default(PENDING)
+  promptVersion String
+  inputHash     String
+  output        Json?
+  errorCode     String?
+  createdAt     DateTime        @default(now())
+  completedAt   DateTime?
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind, createdAt])
+  @@index([status, createdAt])
+}
