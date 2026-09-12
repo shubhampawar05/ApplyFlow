@@ -1,0 +1,5 @@
+// Purpose: define the persistent domain model for ApplyFlow AI.
+// Codex task: implement the complete schema described in docs/06-DATABASE.md.
+// Include ownership, indexes, enums, timestamps, and relationships.
+// Add constraints needed for duplicate detection and delivery tracking.
+// Do not include real credentials or provider secrets in the schema.
