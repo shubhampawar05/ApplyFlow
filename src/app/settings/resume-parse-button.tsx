@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AiProcessingBanner } from "@/components/ai-processing-banner";
+import { Button } from "@/components/button";
 
 export function ResumeParseButton({ resumeId, hasProfile }: { resumeId: string; hasProfile: boolean }) {
   const router = useRouter();
@@ -31,9 +33,10 @@ export function ResumeParseButton({ resumeId, hasProfile }: { resumeId: string; 
 
   return (
     <div>
-      <button className="button secondary" disabled={pending} onClick={handleParse} type="button">
-        {pending ? "Parsing resume…" : hasProfile ? "Re-parse resume" : "Parse resume"}
-      </button>
+      {pending ? <AiProcessingBanner message="Reading your resume and building your profile…" /> : null}
+      <Button loading={pending} onClick={handleParse} type="button" variant="secondary">
+        {hasProfile ? "Re-parse resume" : "Parse resume"}
+      </Button>
       {error ? (
         <p className="upload-error" role="alert">
           {error}

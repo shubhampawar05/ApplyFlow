@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/button";
 
 type DuplicateApplication = {
   id: string;
@@ -85,7 +86,7 @@ export function ApplicationSendPanel({
 
   if (sent) {
     return (
-      <section className="settings-section">
+      <section className="settings-section" id="section-send">
         <p className="section-label">Send application</p>
         <div className="resume-card send-success-card" role="status">
           <p className="resume-card-title"><strong>Application email sent.</strong></p>
@@ -96,7 +97,7 @@ export function ApplicationSendPanel({
   }
 
   return (
-    <section className="settings-section">
+    <section className="settings-section" id="section-send">
       <p className="section-label">Send application</p>
 
       {!canSend ? (
@@ -145,9 +146,9 @@ export function ApplicationSendPanel({
               <span>I understand this may duplicate a recent application and still want to send.</span>
             </label>
           ) : null}
-          <button className="button send-button" disabled={pending || !canSubmit} onClick={handleSend} type="button">
-            {pending ? "Sending through Gmail…" : "Send application email"}
-          </button>
+          <Button className="send-button" disabled={!canSubmit} loading={pending} onClick={handleSend} type="button">
+            Send application email
+          </Button>
           {error ? (
             <p className="upload-error" role="alert">
               {error}

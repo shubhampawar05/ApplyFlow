@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { AiProcessingBanner } from "@/components/ai-processing-banner";
+import { Button } from "@/components/button";
 
 type EmailDraft = {
   id: string;
@@ -92,7 +94,7 @@ export function ApplicationEmailPanel({
   }
 
   return (
-    <section className="settings-section">
+    <section className="settings-section" id="section-email">
       <p className="section-label">Application email</p>
 
       {!canGenerate ? (
@@ -113,9 +115,10 @@ export function ApplicationEmailPanel({
           <p className="quiet-note">
             Claims are grounded in your resume profile. Nothing is sent until you explicitly approve sending later.
           </p>
-          <button className="button secondary" disabled={generating} onClick={handleGenerate} type="button">
-            {generating ? "Generating email…" : email ? "Regenerate email draft" : "Generate email draft"}
-          </button>
+          {generating ? <AiProcessingBanner message="Drafting a grounded application email…" /> : null}
+          <Button loading={generating} onClick={handleGenerate} type="button" variant="secondary">
+            {email ? "Regenerate email draft" : "Generate email draft"}
+          </Button>
         </div>
       )}
 
@@ -150,9 +153,9 @@ export function ApplicationEmailPanel({
               Email draft saved.
             </p>
           ) : null}
-          <button className="button" disabled={saving} type="submit">
-            {saving ? "Saving…" : "Save email draft"}
-          </button>
+          <Button loading={saving} type="submit">
+            Save email draft
+          </Button>
         </form>
       ) : canGenerate ? (
         <div className="empty-card">

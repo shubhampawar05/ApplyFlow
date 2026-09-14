@@ -22,6 +22,7 @@ This directory is the product and engineering source of truth.
 - `11-USER-FLOWS.md` — end-to-end user journeys and state transitions.
 - `12-ROADMAP.md` — phases, milestones, and backlog.
 - `13-TEST-PLAN.md` — quality strategy and acceptance testing.
+- `16-UX-IMPROVEMENT-PLAN.md` — UX polish backlog, phases, and change log (what changed when).
 
 ## Rule
 If code and documentation disagree, do not guess. Resolve the discrepancy by updating the appropriate source-of-truth document first.
