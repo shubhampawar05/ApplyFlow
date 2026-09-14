@@ -59,9 +59,12 @@ export async function extractJobForUser(userId: string, jobId: string) {
 
     return { job: updatedJob, application };
   } catch (error) {
+    const errorCode = error instanceof Error ? error.message.slice(0, 120) : "AI_EXTRACT_FAILED";
+    console.error("Job extraction failed", { jobId, errorCode, error });
+
     await completeAiRequest(aiRequest.id, {
       status: "FAILED",
-      errorCode: error instanceof Error ? error.message.slice(0, 120) : "AI_EXTRACT_FAILED",
+      errorCode,
     });
 
     if (error instanceof JobExtractionError) throw error;
