@@ -3,19 +3,15 @@
 Living tracker for what is shipped on `main`, what is in progress, and what is still ahead.
 Update this file at the end of each merged feature branch.
 
-**Last updated:** 2026-09-14 (`feature/resume-parsing` in progress)
+**Last updated:** 2026-09-14 (`feature/job-screenshot-intake` in progress)
 
 ---
 
 ## Phase 0 — Foundation
 
-| Item | Status | Notes |
-|------|--------|-------|
-| Repository + docs scaffold | ✅ Done | Merged on `main` |
-| PostgreSQL + Prisma schema | ✅ Done | PR #1 |
-| Supabase Auth + Google sign-in | ✅ Done | PR #1, verified locally |
-| Supabase Storage bucket + S3 keys | ✅ Done | Private bucket configured |
-| Vitest + unit test foundation | ✅ Done | |
+| Item | Status |
+|------|--------|
+| Auth, database, storage, tests | ✅ Done |
 
 **Phase 0:** ✅ Complete
 
@@ -26,16 +22,14 @@ Update this file at the end of each merged feature branch.
 | Item | Status | Notes |
 |------|--------|-------|
 | Job intake domain | ✅ Done | PR #2 |
-| Resume upload | ✅ Done | PR #3 — `POST /api/resumes`, Settings UI |
-| **Resume parsing → profile** | 🔧 In progress | `feature/resume-parsing` |
-| **Resume profile review screen** | 🔧 In progress | Editable profile on Settings |
-| New Application screenshot UI | 🟡 Partial | Upload UI only; not persisted |
-| Job screenshot upload (persisted) | ⬜ Left | Storage + `Job` row |
+| Resume upload + parse + profile review | ✅ Done | PR #3, PR #4 |
+| **Job screenshot upload (persisted)** | 🔧 In progress | `feature/job-screenshot-intake` |
+| **Application draft created from screenshot** | 🔧 In progress | `Job` + `Application` DRAFT |
 | Vision-based job extraction | ⬜ Left | `POST /api/jobs/extract` |
 | Editable job review screen | ⬜ Left | After extraction |
 
-**Recommended next branch:** `feature/resume-parsing` (finish + merge)  
-**Then:** persisted job screenshot upload + extraction
+**Recommended next branch:** `feature/job-screenshot-intake` (finish + merge)  
+**Then:** `feature/job-extraction` (AI + editable review)
 
 ---
 
@@ -58,6 +52,7 @@ Update this file at the end of each merged feature branch.
 | #1 | `feature/auth-foundation` | Data + auth |
 | #2 | `feature/job-intake-domain` | Job schemas, normalization |
 | #3 | `feature/resume-foundation` | Resume upload + storage |
+| #4 | `feature/resume-parsing` | Resume parse + profile review |
 
 ---
 
@@ -66,5 +61,5 @@ Update this file at the end of each merged feature branch.
 | Variable | Status |
 |----------|--------|
 | `STORAGE_*` | ✅ Configured |
-| `OPENAI_API_KEY` | ✅ Required for resume parsing |
+| `OPENAI_API_KEY` | ✅ Configured |
 | Gmail OAuth env | Phase 2 only |
