@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { parseStoredMatchDetails } from "@/features/applications/application-match.service";
+import { getApplicationDetailForUser } from "@/features/applications/application.repository";
+import { getDefaultResumeWithProfile } from "@/features/resume/resume.repository";
 import { requireCurrentUser } from "@/features/auth/require-current-user";
-import { getApplicationForUser } from "@/features/applications/application.repository";
+import { ApplicationMatchPanel } from "./application-match-panel";
 import { JobExtractButton } from "./job-extract-button";
 import { JobReviewForm } from "./job-review-form";
 
@@ -22,7 +25,7 @@ function hasExtractedFields(job: {
 export default async function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireCurrentUser();
   const { id } = await params;
-  const application = await getApplicationForUser(user.id, id);
+  const application = await getApplicationDetailForUser(user.id, id);
 
   if (!application) {
     notFound();
@@ -30,6 +33,20 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
 
   const job = application.job;
   const extracted = hasExtractedFields(job);
+  const defaultResume = application.resume ?? (await getDefaultResumeWithProfile(user.id));
+  const hasResumeProfile = Boolean(defaultResume?.profile);
+  const jobReadyForMatch = Boolean(
+    (job.company || job.title) && (job.skills.length > 0 || job.description),
+  );
+  const latestMatchEvent = application.events[0];
+  const initialMatch = parseStoredMatchDetails(latestMatchEvent?.metadata);
+
+  let matchBlockReason = "Extract and review the job details before running a match.";
+  if (extracted && !hasResumeProfile) {
+    matchBlockReason = "Upload and parse your resume in Settings before running a match.";
+  } else if (extracted && hasResumeProfile && !jobReadyForMatch) {
+    matchBlockReason = "Add a job title or company plus skills or a description before running a match.";
+  }
 
   return (
     <AppShell activePath="" userLabel={user.displayName ?? user.email}>
@@ -52,6 +69,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
       </section>
 
       <section className="settings-section">
+        <p className="section-label">Job review</p>
         {extracted ? (
           <JobReviewForm
             jobId={job.id}
@@ -79,6 +97,15 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           </div>
         )}
       </section>
+
+      {extracted ? (
+        <ApplicationMatchPanel
+          applicationId={application.id}
+          blockReason={matchBlockReason}
+          canMatch={jobReadyForMatch && hasResumeProfile}
+          initialMatch={initialMatch}
+        />
+      ) : null}
     </AppShell>
   );
 }
