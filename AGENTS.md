@@ -14,10 +14,12 @@ Do not implement autonomous sending, mass applications, fabricated candidate cla
 
 ## Agent workflow
 1. Read this file and the relevant document under `docs/` before changing code.
-2. Read the nearest `AGENTS.md` before editing files in a scoped directory.
-3. Make the smallest coherent change that satisfies the task.
-4. Run the checks defined by the relevant docs before declaring the task complete.
-5. Never expose secrets, OAuth tokens, private files, or personal application data in logs.
+2. Read `docs/15-PROGRESS.md` for what is done, in progress, and next.
+3. Read the nearest `AGENTS.md` before editing files in a scoped directory.
+4. Make the smallest coherent change that satisfies the task.
+5. Run the checks defined by the relevant docs before declaring the task complete.
+6. Update `docs/15-PROGRESS.md` (and `.cursor/rules/` when useful) when status or next steps change.
+7. Never expose secrets, OAuth tokens, private files, or personal application data in logs.
 
 ## Engineering rules
 - TypeScript strict mode.

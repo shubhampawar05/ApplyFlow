@@ -32,6 +32,9 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   if (!isAuthenticated && !isPublicAuthPath(pathname)) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Sign in required." } }, { status: 401 });
+    }
     return NextResponse.redirect(new URL(loginPathWithNext(`${pathname}${request.nextUrl.search}`), request.url));
   }
 
