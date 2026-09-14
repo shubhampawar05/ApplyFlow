@@ -1,3 +1,5 @@
+// Purpose: resolve the current user for API route handlers.
+// Constraints: return null when unauthenticated; no redirects; delegate parsing to auth.service.
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
 import { identityFromClaims } from "./auth.service";
 import { syncAppUser } from "./auth.repository";

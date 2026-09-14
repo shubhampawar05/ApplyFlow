@@ -1,3 +1,5 @@
+// Purpose: PATCH endpoint to save user-edited resume profile fields.
+// Constraints: authenticate user; validate with Zod; delegate to resume-profile.service.
 import { ZodError } from "zod";
 import { getApiCurrentUser } from "@/features/auth/get-api-current-user";
 import type { ResumeProfilePatch } from "@/features/ai/resume-parsing.schema";

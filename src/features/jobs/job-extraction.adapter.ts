@@ -1,3 +1,5 @@
+// Purpose: call OpenAI vision API and return schema-validated job extraction output.
+// Constraints: bump JOB_EXTRACTION_PROMPT_VERSION when prompt or model changes; output must pass jobExtractionModelSchema.
 import { zodResponseFormat } from "openai/helpers/zod";
 import {
   jobExtractionModelSchema,

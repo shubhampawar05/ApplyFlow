@@ -1,3 +1,5 @@
+// Purpose: POST endpoint to upload a job screenshot and create a draft application.
+// Constraints: authenticate user; validate upload; delegate to application and job-screenshot services.
 import { ZodError } from "zod";
 import { createApplicationFromScreenshot } from "@/features/applications/application.service";
 import { getApiCurrentUser } from "@/features/auth/get-api-current-user";

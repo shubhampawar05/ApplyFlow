@@ -1,3 +1,5 @@
+// Purpose: POST endpoint to parse a resume into a structured profile via AI.
+// Constraints: authenticate user; verify resume ownership; delegate to resume-profile.service.
 import { parseResumeProfileForUser, ResumeProfileError } from "@/features/resume/resume-profile.service";
 import { getApiCurrentUser } from "@/features/auth/get-api-current-user";
 import { apiError, apiSuccess } from "@/lib/api/responses";

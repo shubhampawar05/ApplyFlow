@@ -1,0 +1,14 @@
+---
+description: Domain service patterns for feature modules
+globs: src/features/**/*.service.ts
+alwaysApply: false
+---
+
+# Feature services
+
+- Keep services focused on orchestration and business rules for one domain.
+- No React imports, no UI logic, no direct HTTP request/response handling.
+- Delegate persistence to `*.repository.ts` and provider calls to `*.adapter.ts`.
+- Validate external input with Zod schemas before persisting or calling providers.
+- Throw domain errors with stable codes; map to API responses only in route handlers.
+- Prefer deterministic logic; use LLMs only through adapters with schema-validated output.

@@ -1,3 +1,5 @@
+// Purpose: Prisma access for job records scoped to user ownership.
+// Constraints: always filter by userId; no AI, HTTP, or business-rule logic.
 import { prisma } from "@/lib/prisma";
 import { jobDraftToUpdateData } from "./job.mapper";
 import type { PreparedJobScreenshotUpload } from "./job-screenshot.types";

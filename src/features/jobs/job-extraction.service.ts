@@ -1,3 +1,5 @@
+// Purpose: orchestrate vision-based job field extraction from a user's screenshot.
+// Constraints: record AI requests; require owned job with screenshot; delegate OpenAI calls to job-extraction.adapter.
 import { createHash } from "node:crypto";
 import { JOB_EXTRACTION_PROMPT_VERSION, extractJobFromScreenshot } from "./job-extraction.adapter";
 import { jobDraftToUpdateData, jobRecordToDraftInput } from "./job.mapper";

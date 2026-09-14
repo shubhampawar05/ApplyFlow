@@ -1,0 +1,14 @@
+---
+description: Next.js API route handler conventions
+globs: src/app/api/**/*.ts
+alwaysApply: false
+---
+
+# API routes
+
+- Keep route handlers thin: authenticate, parse input, call a service, return a response.
+- Use `getApiCurrentUser()` and return 401 when unauthenticated.
+- Validate request bodies with Zod; return 400 with stable error codes on failure.
+- No Prisma queries, OpenAI calls, or business rules directly in route files.
+- Follow `docs/07-API.md` for request/response contracts.
+- Map domain errors to HTTP status in the route; do not leak secrets or stack traces.

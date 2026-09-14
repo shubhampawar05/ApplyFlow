@@ -1,3 +1,5 @@
+// Purpose: pure auth identity helpers and Supabase claim parsing.
+// Constraints: no database, HTTP, or redirect logic; no secrets in logs.
 export type AuthIdentity = {
   authUserId: string;
   email: string;

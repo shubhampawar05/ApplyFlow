@@ -1,3 +1,5 @@
+// Purpose: call OpenAI and return schema-validated resume parsing output.
+// Constraints: bump RESUME_PARSING_PROMPT_VERSION when prompt or model changes; no fabricated resume facts.
 import { zodResponseFormat } from "openai/helpers/zod";
 import { getOpenAiClient } from "@/lib/openai/client";
 import { resumeParsingOutputSchema, type ResumeParsingOutput } from "./resume-parsing.schema";
