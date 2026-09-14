@@ -27,4 +27,5 @@ export type ApplicationStatusPatch = z.infer<typeof applicationStatusPatchSchema
 
 export const applicationListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
+  status: applicationStatusSchema.optional(),
 });

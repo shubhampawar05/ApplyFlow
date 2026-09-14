@@ -5,6 +5,7 @@ describe("application schemas", () => {
   it("defaults list query limit", () => {
     expect(applicationListQuerySchema.parse({}).limit).toBe(20);
     expect(applicationListQuerySchema.parse({ limit: "5" }).limit).toBe(5);
+    expect(applicationListQuerySchema.parse({ status: "SENT" }).status).toBe("SENT");
   });
 
   it("accepts post-send status updates only", () => {
