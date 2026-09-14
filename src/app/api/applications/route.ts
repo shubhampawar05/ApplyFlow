@@ -14,6 +14,7 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const query = {
     limit: requestUrl.searchParams.get("limit"),
+    status: requestUrl.searchParams.get("status"),
   };
 
   try {

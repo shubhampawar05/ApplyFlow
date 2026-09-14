@@ -30,7 +30,7 @@ export async function createApplicationFromScreenshot(
 }
 
 export async function getApplicationsForUser(userId: string, query: unknown) {
-  const { limit } = applicationListQuerySchema.parse(query ?? {});
-  const applications = await listApplicationsForUser(userId, limit);
+  const { limit, status } = applicationListQuerySchema.parse(query ?? {});
+  const applications = await listApplicationsForUser(userId, { limit, status });
   return { applications };
 }

@@ -381,9 +381,51 @@ export async function listApplicationsForDuplicateCheck(userId: string, applicat
   return { current, others };
 }
 
-export async function listApplicationsForUser(userId: string, limit = 20) {
-  return prisma.application.findMany({
+export async function getApplicationStatsForUser(userId: string) {
+  const grouped = await prisma.application.groupBy({
+    by: ["status"],
     where: { userId },
+    _count: { _all: true },
+  });
+
+  const counts = Object.fromEntries(grouped.map((row) => [row.status, row._count._all])) as Record<string, number>;
+  const read = (status: ApplicationStatus) => counts[status] ?? 0;
+
+  const draft = read("DRAFT");
+  const analyzed = read("ANALYZED");
+  const ready = read("READY");
+  const sent = read("SENT");
+  const followUp = read("FOLLOW_UP");
+  const interview = read("INTERVIEW");
+  const rejected = read("REJECTED");
+  const offer = read("OFFER");
+  const closed = read("CLOSED");
+
+  return {
+    draft,
+    analyzed,
+    ready,
+    sent,
+    followUp,
+    interview,
+    rejected,
+    offer,
+    closed,
+    total: draft + analyzed + ready + sent + followUp + interview + rejected + offer + closed,
+  };
+}
+
+export async function listApplicationsForUser(
+  userId: string,
+  options: { limit?: number; status?: ApplicationStatus } = {},
+) {
+  const limit = options.limit ?? 20;
+
+  return prisma.application.findMany({
+    where: {
+      userId,
+      ...(options.status ? { status: options.status } : {}),
+    },
     orderBy: { updatedAt: "desc" },
     take: limit,
     select: {
