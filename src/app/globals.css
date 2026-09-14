@@ -34,6 +34,7 @@ button, input { font: inherit; }
 .auth-card { width: min(560px, 100%); }
 .auth-card .button { margin-top: 24px; }
 .settings-section { margin-top: 40px; display: grid; gap: 16px; }
+.settings-section[id] { scroll-margin-top: 24px; }
 .resume-card { max-width: 720px; padding: 18px 20px; border: 1px solid #cbdacd; border-radius: 10px; background: var(--accent-soft); color: #224c39; }
 .resume-card-title { margin: 0; font-size: 14px; }
 .profile-review { max-width: 720px; display: grid; gap: 16px; }
@@ -171,6 +172,13 @@ h1 { margin: 0; font-size: clamp(29px, 4vw, 42px); line-height: 1.08; letter-spa
 .status-actions .active-status { border-color: var(--accent); color: var(--accent-dark); }
 .application-timeline { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; max-width: 720px; }
 .application-timeline li { display: flex; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.timeline-item-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.timeline-icon { display: grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; border-radius: 999px; background: var(--surface-subtle); color: var(--accent-dark); font-size: 13px; font-weight: 700; }
 .application-timeline strong { font-size: 14px; }
 .application-timeline span { color: var(--muted); font-size: 12px; white-space: nowrap; }
-@media (max-width: 760px) { .shell { display: block; } .sidebar { position: static; height: auto; padding: 18px; border-right: 0; border-bottom: 1px solid var(--line); } .nav { display: flex; gap: 3px; margin-top: 18px; overflow-x: auto; } .nav-link { white-space: nowrap; } .sidebar-foot { display: none; } .main { padding: 30px 20px 48px; } .topbar { align-items: flex-start; margin-bottom: 34px; } .topbar .button { display: none; } .progress { grid-template-columns: 1fr; } .flow-stepper { grid-template-columns: 1fr; } .next-action-callout { flex-direction: column; align-items: flex-start; } .dashboard-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-filters { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; } .application-card-head { flex-direction: column; } .application-card-badges { justify-content: flex-start; } .empty-card { padding: 28px; } .upload-actions { flex-direction: column-reverse; } }
+.toast-viewport { position: fixed; right: 24px; bottom: 24px; z-index: 60; }
+.toast { min-width: 220px; max-width: 360px; padding: 12px 16px; border: 1px solid #cbdacd; border-radius: 10px; background: #f7fbf8; color: #224c39; box-shadow: 0 10px 30px rgba(23, 24, 23, .12); font-size: 14px; font-weight: 600; animation: toast-in .2s ease; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.error-recovery-hint { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.error-recovery-hint a { color: var(--accent-dark); font-weight: 600; }
+@media (max-width: 760px) { .shell { display: block; } .sidebar { position: static; height: auto; padding: 18px; border-right: 0; border-bottom: 1px solid var(--line); } .nav { display: flex; gap: 3px; margin-top: 18px; overflow-x: auto; } .nav-link { white-space: nowrap; } .sidebar-foot { display: none; } .main { padding: 30px 20px 48px; } .topbar { align-items: flex-start; margin-bottom: 34px; } .topbar .button { display: none; } .progress { grid-template-columns: 1fr; } .flow-stepper { grid-template-columns: 1fr; } .next-action-callout { flex-direction: column; align-items: flex-start; } .dashboard-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-filters { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; } .application-card-head { flex-direction: column; } .application-card-badges { justify-content: flex-start; } .toast-viewport { right: 16px; left: 16px; bottom: 16px; } .toast { max-width: none; } .empty-card { padding: 28px; } .upload-actions { flex-direction: column-reverse; } }

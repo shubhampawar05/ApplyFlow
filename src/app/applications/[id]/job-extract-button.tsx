@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AiProcessingBanner } from "@/components/ai-processing-banner";
 import { Button } from "@/components/button";
+import { ErrorRecoveryHint } from "@/components/error-recovery-hint";
 
 export function JobExtractButton({ jobId, hasExtractedFields }: { jobId: string; hasExtractedFields: boolean }) {
   const router = useRouter();
@@ -38,9 +39,14 @@ export function JobExtractButton({ jobId, hasExtractedFields }: { jobId: string;
         {hasExtractedFields ? "Re-extract from screenshot" : "Extract job details"}
       </Button>
       {error ? (
-        <p className="upload-error" role="alert">
-          {error}
-        </p>
+        <>
+          <p className="upload-error" role="alert">
+            {error}
+          </p>
+          <ErrorRecoveryHint href="/applications/new" linkLabel="Upload a clearer screenshot">
+            Try a screenshot with the job title and application email clearly visible.
+          </ErrorRecoveryHint>
+        </>
       ) : null}
     </div>
   );

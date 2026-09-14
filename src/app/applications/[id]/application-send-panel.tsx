@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AttachmentChip } from "@/components/attachment-chip";
 import { Button } from "@/components/button";
+import { useToast } from "@/components/toast-provider";
 import { mediaUrl } from "@/lib/media/urls";
 
 type DuplicateApplication = {
@@ -38,6 +39,7 @@ export function ApplicationSendPanel({
   resumeId?: string | null;
 }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [confirmed, setConfirmed] = useState(false);
   const [acknowledgedDuplicate, setAcknowledgedDuplicate] = useState(false);
   const [pending, setPending] = useState(false);
@@ -80,6 +82,7 @@ export function ApplicationSendPanel({
       }
 
       setSent(true);
+      showToast("Application email sent.");
       router.refresh();
     } catch {
       setError("Gmail could not send this email. Your draft is still saved.");

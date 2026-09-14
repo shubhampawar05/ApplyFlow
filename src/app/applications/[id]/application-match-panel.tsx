@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AiProcessingBanner } from "@/components/ai-processing-banner";
 import { Button } from "@/components/button";
+import { ErrorRecoveryHint } from "@/components/error-recovery-hint";
 
 type MatchDetails = {
   score: number;
@@ -92,9 +93,14 @@ export function ApplicationMatchPanel({
             {match ? "Re-run match analysis" : "Run match analysis"}
           </Button>
           {error ? (
-            <p className="upload-error" role="alert">
-              {error}
-            </p>
+            <>
+              <p className="upload-error" role="alert">
+                {error}
+              </p>
+              <ErrorRecoveryHint href="/settings" linkLabel="Review your resume profile">
+                Make sure the job details are saved and your resume profile is parsed in Settings.
+              </ErrorRecoveryHint>
+            </>
           ) : null}
         </div>
       )}

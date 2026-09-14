@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { AiProcessingBanner } from "@/components/ai-processing-banner";
 import { Button } from "@/components/button";
+import { ErrorRecoveryHint } from "@/components/error-recovery-hint";
+import { useToast } from "@/components/toast-provider";
 
 type EmailDraft = {
   id: string;
@@ -25,16 +27,15 @@ export function ApplicationEmailPanel({
   blockReason?: string;
 }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
-  const [saved, setSaved] = useState(false);
   const [email, setEmail] = useState<EmailDraft | null>(initialEmail);
 
   async function handleGenerate() {
     setGenerating(true);
     setError(undefined);
-    setSaved(false);
 
     try {
       const response = await fetch(`/api/applications/${applicationId}/generate-email`, { method: "POST" });
@@ -66,7 +67,6 @@ export function ApplicationEmailPanel({
 
     setSaving(true);
     setError(undefined);
-    setSaved(false);
 
     try {
       const response = await fetch(`/api/applications/${applicationId}/email`, {
@@ -84,7 +84,7 @@ export function ApplicationEmailPanel({
         return;
       }
 
-      setSaved(true);
+      showToast("Email draft saved.");
       router.refresh();
     } catch {
       setError("We could not save your email changes.");
@@ -119,6 +119,16 @@ export function ApplicationEmailPanel({
           <Button loading={generating} onClick={handleGenerate} type="button" variant="secondary">
             {email ? "Regenerate email draft" : "Generate email draft"}
           </Button>
+          {error && !email ? (
+            <>
+              <p className="upload-error" role="alert">
+                {error}
+              </p>
+              <ErrorRecoveryHint href="#section-job-review" linkLabel="Review job details">
+                Confirm the application email is valid, then try generating again.
+              </ErrorRecoveryHint>
+            </>
+          ) : null}
         </div>
       )}
 
@@ -144,14 +154,14 @@ export function ApplicationEmailPanel({
             />
           </label>
           {error ? (
-            <p className="upload-error" role="alert">
-              {error}
-            </p>
-          ) : null}
-          {saved ? (
-            <p className="quiet-note" role="status">
-              Email draft saved.
-            </p>
+            <>
+              <p className="upload-error" role="alert">
+                {error}
+              </p>
+              <ErrorRecoveryHint href="#section-job-review" linkLabel="Review job details">
+                Confirm the application email is valid, then try generating again.
+              </ErrorRecoveryHint>
+            </>
           ) : null}
           <Button loading={saving} type="submit">
             Save email draft

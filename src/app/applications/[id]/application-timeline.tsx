@@ -23,6 +23,23 @@ function formatEventLabel(event: TimelineEvent) {
   }
 }
 
+function timelineIcon(eventType: string) {
+  switch (eventType) {
+    case "APPLICATION_CREATED":
+      return "+";
+    case "STATUS_CHANGED":
+      return "↻";
+    case "MATCH_COMPLETED":
+      return "◎";
+    case "EMAIL_GENERATED":
+      return "✎";
+    case "EMAIL_SENT":
+      return "↑";
+    default:
+      return "•";
+  }
+}
+
 export function ApplicationTimeline({ events }: { events: TimelineEvent[] }) {
   if (events.length === 0) {
     return null;
@@ -34,7 +51,10 @@ export function ApplicationTimeline({ events }: { events: TimelineEvent[] }) {
       <ol className="application-timeline">
         {events.map((event) => (
           <li key={event.id}>
-            <strong>{formatEventLabel(event)}</strong>
+            <div className="timeline-item-main">
+              <span aria-hidden="true" className="timeline-icon">{timelineIcon(event.type)}</span>
+              <strong>{formatEventLabel(event)}</strong>
+            </div>
             <span>{event.createdAt.toLocaleString()}</span>
           </li>
         ))}
