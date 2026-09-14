@@ -45,6 +45,7 @@ enum AIRequestStatus {
 
 model User {
   id               String            @id @default(cuid())
+  authUserId       String            @unique
   email            String            @unique
   displayName      String?
   createdAt        DateTime          @default(now())
