@@ -1,6 +1,6 @@
 // Purpose: orchestrate Gmail OAuth connection and approved message sending.
 // Constraints: encrypted token storage; no autonomous send; explicit approval handled by application-send.service.
-import { gmailAdapter, GmailAdapterError } from "./gmail.adapter";
+import { gmailAdapter, GmailAdapterError, type MimeAttachment } from "./gmail.adapter";
 import { createGmailOAuthState, GmailOAuthStateError, parseGmailOAuthState } from "./gmail-oauth-state";
 import {
   getGoogleConnectionForUser,
@@ -106,7 +106,7 @@ export async function getGmailConnectionStatus(userId: string) {
 
 export async function sendGmailMessageForUser(
   userId: string,
-  input: { to: string; subject: string; body: string },
+  input: { to: string; subject: string; body: string; attachment?: MimeAttachment },
 ) {
   const accessToken = await getValidAccessToken(userId);
   const rawMessage = gmailAdapter.encodeMimeMessage(input);

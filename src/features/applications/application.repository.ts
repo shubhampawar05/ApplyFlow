@@ -269,6 +269,14 @@ export async function getApplicationSendContext(userId: string, applicationId: s
     where: { id: applicationId, userId },
     include: {
       job: true,
+      resume: {
+        select: {
+          id: true,
+          fileName: true,
+          storageKey: true,
+          mimeType: true,
+        },
+      },
       emails: {
         orderBy: [{ isSelected: "desc" }, { createdAt: "desc" }],
       },

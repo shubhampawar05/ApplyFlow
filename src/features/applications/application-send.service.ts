@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { gmailSendRequestSchema } from "@/features/integrations/gmail/gmail.schemas";
 import { GmailServiceError, sendGmailMessageForUser } from "@/features/integrations/gmail/gmail.service";
+import { downloadPrivateObject } from "@/lib/storage/object-storage";
 import { findLikelyDuplicateApplicationsForUser } from "./application-duplicate.service";
 import {
   getApplicationSendContext,
@@ -51,8 +52,28 @@ export async function sendApplicationEmailForUser(
     );
   }
 
-  if (!application.resumeId) {
+  if (!application.resumeId || !application.resume) {
     throw new ApplicationSendError("MISSING_RESUME", "Select a resume before sending this application.");
+  }
+
+  let resumeAttachment: { fileName: string; mimeType: string; content: Uint8Array };
+  try {
+    const content = await downloadPrivateObject(application.resume.storageKey);
+    resumeAttachment = {
+      fileName: application.resume.fileName,
+      mimeType: application.resume.mimeType,
+      content,
+    };
+  } catch (error) {
+    console.error("Resume attachment load failed", {
+      applicationId: application.id,
+      resumeId: application.resume.id,
+      error,
+    });
+    throw new ApplicationSendError(
+      "RESUME_ATTACHMENT_FAILED",
+      "We could not load your resume file for sending. Re-upload it in Settings and try again.",
+    );
   }
 
   const selectedEmail = application.emails.find((email) => email.isSelected) ?? application.emails[0];
@@ -85,6 +106,7 @@ export async function sendApplicationEmailForUser(
       to: selectedEmail.to,
       subject: selectedEmail.subject,
       body: selectedEmail.body,
+      attachment: resumeAttachment,
     });
 
     const result = await recordSuccessfulEmailDelivery({

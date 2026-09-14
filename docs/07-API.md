@@ -27,3 +27,4 @@ Never trust a user-supplied resource ID without ownership verification.
 
 ## Send endpoint
 The send endpoint must verify application readiness, recipient validity, selected resume, Gmail connection, and explicit send authorization before invoking Gmail.
+The selected resume file is attached to the outgoing message as its original uploaded PDF or DOCX.

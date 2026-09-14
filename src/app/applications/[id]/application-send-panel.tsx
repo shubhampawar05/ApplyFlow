@@ -22,6 +22,7 @@ export function ApplicationSendPanel({
   gmailConnected,
   applicationStatus,
   duplicateApplications,
+  resumeFileName,
 }: {
   applicationId: string;
   canSend: boolean;
@@ -29,6 +30,7 @@ export function ApplicationSendPanel({
   gmailConnected: boolean;
   applicationStatus: string;
   duplicateApplications: DuplicateApplication[];
+  resumeFileName?: string | null;
 }) {
   const router = useRouter();
   const [confirmed, setConfirmed] = useState(false);
@@ -125,8 +127,9 @@ export function ApplicationSendPanel({
             </div>
           ) : null}
           <p className="quiet-note">
-            This action sends the saved draft through your connected Gmail account. Review the subject, body, and
-            recipient carefully before continuing.
+            This action sends the saved draft through your connected Gmail account
+            {resumeFileName ? ` with your resume attached (${resumeFileName})` : " with your resume attached"}.
+            Review the subject, body, and recipient carefully before continuing.
           </p>
           <label className="send-confirm">
             <input checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} type="checkbox" />
