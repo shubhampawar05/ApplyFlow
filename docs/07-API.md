@@ -5,7 +5,7 @@ POST /api/resumes
 POST /api/resumes/:id/parse
 PATCH /api/resumes/:id/profile
 POST /api/jobs/screenshot
-POST /api/jobs/extract
+POST /api/jobs/:id/extract
 PATCH /api/jobs/:id
 POST /api/applications/:id/match
 POST /api/applications/:id/generate-email
