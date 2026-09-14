@@ -8,6 +8,8 @@ import { getGmailConnectionStatus } from "@/features/integrations/gmail/gmail.se
 import { ApplicationEmailPanel } from "./application-email-panel";
 import { ApplicationMatchPanel } from "./application-match-panel";
 import { ApplicationSendPanel } from "./application-send-panel";
+import { ApplicationStatusPanel } from "./application-status-panel";
+import { ApplicationTimeline } from "./application-timeline";
 import { JobExtractButton } from "./job-extract-button";
 import { JobReviewForm } from "./job-review-form";
 
@@ -46,7 +48,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
     (job.company || job.title) && (job.skills.length > 0 || job.description),
   );
   const hasRecipientEmail = isValidEmail(job.applicationEmail);
-  const latestMatchEvent = application.events[0];
+  const latestMatchEvent = application.events.find((event) => event.type === "MATCH_COMPLETED");
   const initialMatch = parseStoredMatchDetails(latestMatchEvent?.metadata);
   const selectedEmail = application.emails.find((email) => email.isSelected) ?? application.emails[0] ?? null;
   const gmailStatus = await getGmailConnectionStatus(user.id);
@@ -164,6 +166,9 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           gmailConnected={gmailStatus.connected}
         />
       ) : null}
+
+      <ApplicationStatusPanel applicationId={application.id} currentStatus={application.status} />
+      <ApplicationTimeline events={application.events} />
     </AppShell>
   );
 }

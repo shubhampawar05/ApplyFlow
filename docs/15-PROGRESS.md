@@ -1,6 +1,6 @@
 # ApplyFlow — Build Progress
 
-**Last updated:** 2026-09-14 (`feature/gmail-send` in progress)
+**Last updated:** 2026-09-14 (`feature/application-dashboard` in progress)
 
 ---
 
@@ -19,11 +19,23 @@
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Resume/job match score | ✅ Done | PR #10 — `POST /api/applications/:id/match` |
-| Email generation + preview/edit | ✅ Done | PR #10 — generate + `PATCH /api/applications/:id/email` |
-| Gmail OAuth + send | 🔧 In progress | connect/callback/status + `POST /api/applications/:id/send` |
+| Resume/job match score | ✅ Done | PR #10 |
+| Email generation + preview/edit | ✅ Done | PR #10 |
+| Gmail OAuth + send | ✅ Done | connect/callback/status + `POST /api/applications/:id/send` |
 
-**Next after send:** application dashboard + status tracking (Phase 3)
+---
+
+## Phase 3 — Dashboard + tracking
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **Application dashboard list** | 🔧 In progress | `GET /api/applications`, dashboard cards |
+| **Post-send status updates** | 🔧 In progress | `PATCH /api/applications/:id/status` |
+| **Application timeline** | 🔧 In progress | Events on application detail page |
+| Duplicate detection | ⬜ Not started | Warn before send |
+| Analytics + polish | ⬜ Not started | Phase 3 follow-up |
+
+**Next after dashboard:** duplicate detection before send
 
 ---
 

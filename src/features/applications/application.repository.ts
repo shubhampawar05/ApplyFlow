@@ -1,6 +1,6 @@
 // Purpose: Prisma persistence for applications, match results, and generated emails.
 // Constraints: user-scoped queries only; no provider SDK calls or HTTP handling.
-import type { Prisma } from "@prisma/client";
+import type { ApplicationStatus, Prisma } from "@prisma/client";
 import type { EmailPatch } from "@/features/ai/email-generation.schema";
 import type { ResumeMatchingOutput } from "@/features/ai/resume-matching.schema";
 import { prisma } from "@/lib/prisma";
@@ -28,9 +28,7 @@ export async function getApplicationDetailForUser(userId: string, applicationId:
         orderBy: [{ isSelected: "desc" }, { createdAt: "desc" }],
       },
       events: {
-        where: { type: "MATCH_COMPLETED" },
         orderBy: { createdAt: "desc" },
-        take: 1,
       },
     },
   });
@@ -331,6 +329,54 @@ export async function recordSuccessfulEmailDelivery(input: {
     });
 
     return { application: updatedApplication, delivery };
+  });
+}
+
+export async function listApplicationsForUser(userId: string, limit = 20) {
+  return prisma.application.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    take: limit,
+    select: {
+      id: true,
+      status: true,
+      matchScore: true,
+      createdAt: true,
+      updatedAt: true,
+      job: {
+        select: {
+          company: true,
+          title: true,
+          applicationEmail: true,
+        },
+      },
+    },
+  });
+}
+
+export async function updateApplicationStatus(
+  applicationId: string,
+  input: { fromStatus: ApplicationStatus; toStatus: ApplicationStatus },
+) {
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.application.update({
+      where: { id: applicationId },
+      data: { status: input.toStatus },
+      include: {
+        job: true,
+      },
+    });
+
+    await tx.applicationEvent.create({
+      data: {
+        applicationId,
+        type: "STATUS_CHANGED",
+        fromStatus: input.fromStatus,
+        toStatus: input.toStatus,
+      },
+    });
+
+    return updated;
   });
 }
 

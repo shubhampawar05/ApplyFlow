@@ -1,4 +1,7 @@
-import { createDraftApplicationForJob } from "./application.repository";
+// Purpose: orchestrate application intake from screenshots and list queries for the signed-in user.
+// Constraints: delegate persistence to application.repository; no HTTP or provider SDK calls.
+import { createDraftApplicationForJob, listApplicationsForUser } from "./application.repository";
+import { applicationListQuerySchema } from "./application.schemas";
 import { createScreenshotJob } from "@/features/jobs/job.repository";
 import { prepareJobScreenshotUpload } from "@/features/jobs/job-screenshot.service";
 import { uploadPrivateObject } from "@/lib/storage/object-storage";
@@ -24,4 +27,10 @@ export async function createApplicationFromScreenshot(
   const application = await createDraftApplicationForJob(userId, job.id);
 
   return { job, application, fileName: prepared.fileName };
+}
+
+export async function getApplicationsForUser(userId: string, query: unknown) {
+  const { limit } = applicationListQuerySchema.parse(query ?? {});
+  const applications = await listApplicationsForUser(userId, limit);
+  return { applications };
 }
