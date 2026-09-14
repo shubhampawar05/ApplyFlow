@@ -2,6 +2,8 @@
 
 ## Routes
 POST /api/resumes
+POST /api/resumes/:id/parse
+PATCH /api/resumes/:id/profile
 POST /api/jobs/extract
 PATCH /api/jobs/:id
 POST /api/applications/:id/match
