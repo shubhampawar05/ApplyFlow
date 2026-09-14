@@ -170,6 +170,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             updatedAt: duplicate.updatedAt.toISOString(),
           }))}
           gmailConnected={gmailStatus.connected}
+          resumeFileName={defaultResume?.fileName ?? null}
         />
       ) : null}
 

@@ -1,6 +1,6 @@
 # ApplyFlow — Build Progress
 
-**Last updated:** 2026-09-14 (`feature/dashboard-analytics` ready for PR)
+**Last updated:** 2026-09-14 (`feature/resume-attachment-on-send` ready for PR)
 
 ---
 
@@ -22,6 +22,7 @@
 | Resume/job match score | ✅ Done | PR #10 |
 | Email generation + preview/edit | ✅ Done | PR #10 |
 | Gmail OAuth + send | ✅ Done | PR #11 |
+| Resume attachment on send | ✅ Done | Attach uploaded resume PDF/DOCX to Gmail send |
 
 ---
 

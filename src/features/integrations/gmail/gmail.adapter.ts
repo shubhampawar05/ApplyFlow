@@ -100,15 +100,60 @@ async function fetchGoogleUserInfo(accessToken: string) {
   return (await response.json()) as GoogleUserInfo;
 }
 
-function encodeMimeMessage(input: { to: string; subject: string; body: string }) {
-  const mime = [
+export type MimeAttachment = {
+  fileName: string;
+  mimeType: string;
+  content: Uint8Array;
+};
+
+function sanitizeAttachmentFileName(fileName: string) {
+  const cleaned = fileName.replace(/[\r\n"]/g, "").trim();
+  return cleaned || "resume.pdf";
+}
+
+function toBase64Lines(content: Uint8Array) {
+  const base64 = Buffer.from(content).toString("base64");
+  return base64.replace(/.{1,76}/g, "$&\r\n").trimEnd();
+}
+
+function encodeRawMimeMessage(input: { to: string; subject: string; body: string; attachment?: MimeAttachment }) {
+  if (!input.attachment) {
+    return [
+      `To: ${input.to}`,
+      `Subject: ${input.subject}`,
+      "MIME-Version: 1.0",
+      "Content-Type: text/plain; charset=UTF-8",
+      "",
+      input.body,
+    ].join("\r\n");
+  }
+
+  const boundary = `applyflow_${Date.now().toString(36)}`;
+  const fileName = sanitizeAttachmentFileName(input.attachment.fileName);
+
+  return [
     `To: ${input.to}`,
     `Subject: ${input.subject}`,
     "MIME-Version: 1.0",
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    "",
+    `--${boundary}`,
     "Content-Type: text/plain; charset=UTF-8",
     "",
     input.body,
+    `--${boundary}`,
+    `Content-Type: ${input.attachment.mimeType}; name="${fileName}"`,
+    `Content-Disposition: attachment; filename="${fileName}"`,
+    "Content-Transfer-Encoding: base64",
+    "",
+    toBase64Lines(input.attachment.content),
+    `--${boundary}--`,
+    "",
   ].join("\r\n");
+}
+
+function encodeMimeMessage(input: { to: string; subject: string; body: string; attachment?: MimeAttachment }) {
+  const mime = encodeRawMimeMessage(input);
 
   return Buffer.from(mime, "utf8")
     .toString("base64")
