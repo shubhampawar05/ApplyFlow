@@ -6,6 +6,7 @@ export const gmailSendRequestSchema = z.object({
   confirm: z.literal(true, {
     errorMap: () => ({ message: "Explicit send confirmation is required." }),
   }),
+  acknowledgeDuplicate: z.literal(true).optional(),
 });
 
 export type GmailSendRequest = z.infer<typeof gmailSendRequestSchema>;

@@ -1,6 +1,6 @@
 # ApplyFlow — Build Progress
 
-**Last updated:** 2026-09-14 (`feature/application-dashboard` in progress)
+**Last updated:** 2026-09-14 (`feature/duplicate-detection` in progress)
 
 ---
 
@@ -29,13 +29,13 @@
 
 | Item | Status | Notes |
 |------|--------|-------|
-| **Application dashboard list** | 🔧 In progress | `GET /api/applications`, dashboard cards |
-| **Post-send status updates** | 🔧 In progress | `PATCH /api/applications/:id/status` |
-| **Application timeline** | 🔧 In progress | Events on application detail page |
-| Duplicate detection | ⬜ Not started | Warn before send |
+| Application dashboard list | ✅ Done | `GET /api/applications`, dashboard cards |
+| Post-send status updates | ✅ Done | `PATCH /api/applications/:id/status` |
+| Application timeline | ✅ Done | Events on application detail page |
+| **Duplicate detection before send** | 🔧 In progress | Warning UI + send gate with `acknowledgeDuplicate` |
 | Analytics + polish | ⬜ Not started | Phase 3 follow-up |
 
-**Next after dashboard:** duplicate detection before send
+**Next after duplicate detection:** analytics + polish, then Phase 4 planning
 
 ---
 

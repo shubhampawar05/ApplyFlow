@@ -332,6 +332,55 @@ export async function recordSuccessfulEmailDelivery(input: {
   });
 }
 
+export async function listApplicationsForDuplicateCheck(userId: string, applicationId: string) {
+  const current = await prisma.application.findFirst({
+    where: { id: applicationId, userId },
+    select: {
+      id: true,
+      job: {
+        select: {
+          company: true,
+          title: true,
+          applicationEmail: true,
+          normalizedCompany: true,
+          normalizedTitle: true,
+          normalizedApplicationEmail: true,
+        },
+      },
+    },
+  });
+
+  if (!current) {
+    return { current: null, others: [] };
+  }
+
+  const others = await prisma.application.findMany({
+    where: {
+      userId,
+      id: { not: applicationId },
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 25,
+    select: {
+      id: true,
+      status: true,
+      updatedAt: true,
+      job: {
+        select: {
+          company: true,
+          title: true,
+          applicationEmail: true,
+          normalizedCompany: true,
+          normalizedTitle: true,
+          normalizedApplicationEmail: true,
+        },
+      },
+    },
+  });
+
+  return { current, others };
+}
+
 export async function listApplicationsForUser(userId: string, limit = 20) {
   return prisma.application.findMany({
     where: { userId },

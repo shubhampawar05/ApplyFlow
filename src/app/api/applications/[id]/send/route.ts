@@ -37,10 +37,12 @@ export async function POST(request: Request, context: RouteContext) {
       const status =
         error.code === "NOT_FOUND"
           ? 404
-          : error.code === "GMAIL_SEND_FAILED"
-            ? 502
-            : 400;
-      return apiError(error.code, error.message, status);
+          : error.code === "DUPLICATE_WARNING"
+            ? 409
+            : error.code === "GMAIL_SEND_FAILED"
+              ? 502
+              : 400;
+      return apiError(error.code, error.message, status, error.details);
     }
 
     console.error("Application send failed", error);
