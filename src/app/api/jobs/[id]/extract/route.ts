@@ -1,3 +1,5 @@
+// Purpose: POST endpoint to extract job fields from a screenshot via vision AI.
+// Constraints: authenticate user; thin handler delegating to job-extraction.service; follow docs/07-API.md.
 import { getApiCurrentUser } from "@/features/auth/get-api-current-user";
 import { extractJobForUser, JobExtractionError } from "@/features/jobs/job-extraction.service";
 import { apiError, apiSuccess } from "@/lib/api/responses";

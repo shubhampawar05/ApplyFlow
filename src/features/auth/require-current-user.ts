@@ -1,3 +1,5 @@
+// Purpose: server-side auth guard for pages and server actions.
+// Constraints: redirect unauthenticated users; delegate identity parsing to auth.service.
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server-client";
 import { identityFromClaims } from "./auth.service";

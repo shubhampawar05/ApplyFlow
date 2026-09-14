@@ -1,3 +1,5 @@
+// Purpose: Zod schemas and sanitization for AI job extraction output.
+// Constraints: coerce empty strings to null; validate emails and URLs; no orchestration or persistence logic.
 import { z } from "zod";
 
 function emptyToNull(value: unknown) {

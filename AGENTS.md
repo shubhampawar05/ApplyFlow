@@ -16,10 +16,11 @@ Do not implement autonomous sending, mass applications, fabricated candidate cla
 1. Read this file and the relevant document under `docs/` before changing code.
 2. Read `docs/15-PROGRESS.md` for what is done, in progress, and next.
 3. Read the nearest `AGENTS.md` before editing files in a scoped directory.
-4. Make the smallest coherent change that satisfies the task.
-5. Run the checks defined by the relevant docs before declaring the task complete.
-6. Update `docs/15-PROGRESS.md` (and `.cursor/rules/` when useful) when status or next steps change.
-7. Never expose secrets, OAuth tokens, private files, or personal application data in logs.
+4. Read the target file's header contract (see File header convention) before editing.
+5. Make the smallest coherent change that satisfies the task.
+6. Run the checks defined by the relevant docs before declaring the task complete.
+7. Update `docs/15-PROGRESS.md` (and `.cursor/rules/` when useful) when status or next steps change.
+8. Never expose secrets, OAuth tokens, private files, or personal application data in logs.
 
 ## Engineering rules
 - TypeScript strict mode.
@@ -31,10 +32,34 @@ Do not implement autonomous sending, mass applications, fabricated candidate cla
 - Prefer deterministic application logic over unnecessary LLM decisions.
 - Do not silently change product requirements; update docs first when a requirement changes.
 
-## File comment convention
-Implementation placeholder files created during scaffolding contain exactly five comment lines.
-Those comments describe the file's purpose and the work Codex must implement.
-After implementation, Codex may replace the placeholder comments with real code and appropriate documentation.
+## File header convention
+Every source file has a header contract so agents know what belongs in that file and what does not.
+
+### Placeholder files (not yet implemented)
+Use exactly five comment lines at the top of the file:
+
+```
+// Purpose: <what this file owns>
+// Task: <what the agent should implement next>
+// In scope: <what belongs here>
+// Out of scope: <what must NOT be added here>
+// Refs: <relevant docs/, AGENTS.md, and related files>
+```
+
+Optional sixth line when useful: `// Status: placeholder | in-progress | done`
+
+### Implemented files
+Keep a two-line header after implementation:
+
+```
+// Purpose: <unchanged from placeholder>
+// Constraints: <hard rules — security, approval gates, layering, no client secrets>
+```
+
+Do not remove the header when replacing placeholder code. Do not duplicate full specs from `docs/` — link via `Refs` or `Constraints` instead.
+
+If a placeholder file has no header, add the five-line contract before implementing.
+If an agent needs behavior not described in the header or scoped `AGENTS.md`, update docs first or ask — do not invent requirements.
 
 ## Definition of done
 A feature is complete only when implementation, validation, tests, relevant documentation, and error states are addressed.

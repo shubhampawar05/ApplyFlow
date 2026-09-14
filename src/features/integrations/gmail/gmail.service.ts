@@ -1,5 +1,5 @@
 // Purpose: isolate Gmail OAuth and email-delivery operations.
-// Codex task: implement secure token handling and approved email sending.
-// Verify explicit application send authorization before calling Gmail.
-// Never expose OAuth credentials or provider tokens to the client.
-// Map provider failures into stable domain errors.
+// Task: implement secure token handling and approved email sending.
+// In scope: OAuth refresh, send-after-approval, provider error mapping.
+// Out of scope: autonomous sending, client-side tokens, application business logic.
+// Refs: docs/09-SECURITY.md, docs/07-API.md, src/features/integrations/gmail/

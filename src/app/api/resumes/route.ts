@@ -1,3 +1,5 @@
+// Purpose: POST endpoint to upload a resume and set it as the user's default.
+// Constraints: authenticate user; validate upload; delegate to resume services; follow docs/07-API.md.
 import { ZodError } from "zod";
 import { getApiCurrentUser } from "@/features/auth/get-api-current-user";
 import { createResumeAsDefault } from "@/features/resume/resume.repository";

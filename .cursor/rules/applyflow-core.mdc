@@ -1,0 +1,51 @@
+---
+description: Always follow applyflow-implement skill and mandatory file header contracts
+alwaysApply: true
+---
+
+# ApplyFlow agent core
+
+**Always follow** the `applyflow-implement` skill at `.cursor/skills/applyflow-implement/SKILL.md` and the file header convention in root `AGENTS.md` — even when the user does not mention them.
+
+## Default workflow
+
+1. Read `docs/15-PROGRESS.md`, the nearest scoped `AGENTS.md`, and the target file's header before editing.
+2. Make the smallest coherent change that satisfies the task.
+3. Do not invent requirements outside docs, headers, or scoped `AGENTS.md`.
+
+## File header contract (mandatory)
+
+Agents must create or preserve file headers without waiting for the user to ask.
+
+### New or placeholder files (not yet implemented)
+
+If a file has no header, add this **five-line contract at the top before writing code**:
+
+```
+// Purpose: <what this file owns>
+// Task: <what the agent should implement next>
+// In scope: <what belongs here>
+// Out of scope: <what must NOT be added here>
+// Refs: <relevant docs/, AGENTS.md, and related files>
+```
+
+Optional when useful: `// Status: placeholder | in-progress | done`
+
+### After implementation
+
+When placeholder code is replaced with real implementation, **shrink** the header to:
+
+```
+// Purpose: <same as the placeholder>
+// Constraints: <hard rules only — security, approval gates, layering, no client secrets>
+```
+
+Keep `Purpose` accurate. Do not remove the header entirely.
+
+### Editing existing implemented files
+
+If an implemented file is missing a header, add the two-line `Purpose` + `Constraints` header first, inferred from the file's role and nearest `AGENTS.md`.
+
+## When blocked
+
+If behavior is not described in the header or docs, update `docs/` or ask — do not guess.

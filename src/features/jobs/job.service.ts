@@ -1,3 +1,5 @@
+// Purpose: normalize and validate job draft fields before persistence.
+// Constraints: deterministic text normalization only; no database, HTTP, or AI calls.
 import { jobDraftSchema, type JobDraftInput } from "./job.schemas";
 import type { JobDraftForPersistence, NormalizedJobIdentity } from "./job.types";
 

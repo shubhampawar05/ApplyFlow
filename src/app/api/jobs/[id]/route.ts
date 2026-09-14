@@ -1,3 +1,5 @@
+// Purpose: PATCH endpoint to update an owned job draft after user review.
+// Constraints: authenticate user; validate with Zod; thin handler delegating to job-extraction.service.
 import { ZodError } from "zod";
 import { getApiCurrentUser } from "@/features/auth/get-api-current-user";
 import { JobExtractionError, updateJobForUser } from "@/features/jobs/job-extraction.service";

@@ -1,3 +1,5 @@
+// Purpose: Zod schemas for job draft input and PATCH validation.
+// Constraints: schema definitions only; no service, persistence, or AI logic.
 import { z } from "zod";
 
 const optionalText = z.string().trim().min(1).max(5_000).nullable().optional();
