@@ -15,6 +15,7 @@ This directory is the product and engineering source of truth.
 - `08-AI-SPEC.md` — AI pipeline, schemas, guardrails, and evaluation.
 - `09-SECURITY.md` — authentication, OAuth, files, privacy, and threat model.
 - `14-AUTH-SETUP.md` — Supabase Auth and Google provider setup (credentials stay in Supabase).
+- `15-PROGRESS.md` — what is done, in progress, and left on the build roadmap.
 
 ## UX and delivery
 - `10-DESIGN-SPEC.md` — design system and component behavior.
