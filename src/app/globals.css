@@ -92,6 +92,10 @@ h1 { margin: 0; font-size: clamp(29px, 4vw, 42px); line-height: 1.08; letter-spa
 .send-button { background: #9b3d2e; }
 .send-button:hover { background: #7f3126; }
 .send-success-card { border-color: #cbdacd; background: var(--accent-soft); color: #224c39; }
+.duplicate-warning { margin-bottom: 16px; padding: 14px 16px; border: 1px solid #e2c27b; border-radius: 10px; background: #fff8e8; color: #6d4f14; }
+.duplicate-warning p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; }
+.duplicate-warning ul { margin: 12px 0 0; padding-left: 18px; }
+.duplicate-warning a { color: #6d4f14; text-decoration: underline; }
 .application-list { display: grid; gap: 12px; max-width: 920px; }
 .application-card { display: grid; gap: 12px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); transition: border-color .15s ease, transform .15s ease; }
 .application-card:hover { border-color: #bfc6bd; transform: translateY(-1px); }

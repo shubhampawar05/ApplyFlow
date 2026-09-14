@@ -4,28 +4,49 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+type DuplicateApplication = {
+  id: string;
+  status: string;
+  updatedAt: string;
+  job: {
+    company: string | null;
+    title: string | null;
+    applicationEmail: string | null;
+  };
+};
+
 export function ApplicationSendPanel({
   applicationId,
   canSend,
   blockReason,
   gmailConnected,
   applicationStatus,
+  duplicateApplications,
 }: {
   applicationId: string;
   canSend: boolean;
   blockReason?: string;
   gmailConnected: boolean;
   applicationStatus: string;
+  duplicateApplications: DuplicateApplication[];
 }) {
   const router = useRouter();
   const [confirmed, setConfirmed] = useState(false);
+  const [acknowledgedDuplicate, setAcknowledgedDuplicate] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
   const [sent, setSent] = useState(applicationStatus === "SENT");
+  const hasDuplicates = duplicateApplications.length > 0;
+  const canSubmit = confirmed && (!hasDuplicates || acknowledgedDuplicate);
 
   async function handleSend() {
     if (!confirmed) {
       setError("Check the confirmation box before sending.");
+      return;
+    }
+
+    if (hasDuplicates && !acknowledgedDuplicate) {
+      setError("Acknowledge the duplicate warning before sending.");
       return;
     }
 
@@ -36,10 +57,16 @@ export function ApplicationSendPanel({
       const response = await fetch(`/api/applications/${applicationId}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirm: true }),
+        body: JSON.stringify({
+          confirm: true,
+          ...(hasDuplicates ? { acknowledgeDuplicate: true } : {}),
+        }),
       });
 
-      const payload = (await response.json()) as { error?: { message?: string } };
+      const payload = (await response.json()) as {
+        error?: { message?: string; details?: { duplicates?: DuplicateApplication[] } };
+      };
+
       if (!response.ok) {
         setError(payload.error?.message ?? "Gmail could not send this email. Your draft is still saved.");
         return;
@@ -82,6 +109,21 @@ export function ApplicationSendPanel({
         </div>
       ) : (
         <div className="send-card">
+          {hasDuplicates ? (
+            <div className="duplicate-warning" role="alert">
+              <strong>Possible duplicate application</strong>
+              <p>This role looks similar to another application you already saved or sent.</p>
+              <ul>
+                {duplicateApplications.map((duplicate) => (
+                  <li key={duplicate.id}>
+                    <Link href={`/applications/${duplicate.id}`}>
+                      {duplicate.job.title ?? "Untitled role"} at {duplicate.job.company ?? "Unknown company"} ({duplicate.status.replaceAll("_", " ")})
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <p className="quiet-note">
             This action sends the saved draft through your connected Gmail account. Review the subject, body, and
             recipient carefully before continuing.
@@ -90,7 +132,17 @@ export function ApplicationSendPanel({
             <input checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} type="checkbox" />
             <span>I have reviewed this email and approve sending it now.</span>
           </label>
-          <button className="button send-button" disabled={pending || !confirmed} onClick={handleSend} type="button">
+          {hasDuplicates ? (
+            <label className="send-confirm">
+              <input
+                checked={acknowledgedDuplicate}
+                onChange={(event) => setAcknowledgedDuplicate(event.target.checked)}
+                type="checkbox"
+              />
+              <span>I understand this may duplicate a recent application and still want to send.</span>
+            </label>
+          ) : null}
+          <button className="button send-button" disabled={pending || !canSubmit} onClick={handleSend} type="button">
             {pending ? "Sending through Gmail…" : "Send application email"}
           </button>
           {error ? (

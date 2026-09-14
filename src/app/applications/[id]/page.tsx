@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { findLikelyDuplicateApplicationsForUser } from "@/features/applications/application-duplicate.service";
 import { parseStoredMatchDetails } from "@/features/applications/application-match.service";
 import { getApplicationDetailForUser } from "@/features/applications/application.repository";
 import { getDefaultResumeWithProfile } from "@/features/resume/resume.repository";
@@ -52,6 +53,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const initialMatch = parseStoredMatchDetails(latestMatchEvent?.metadata);
   const selectedEmail = application.emails.find((email) => email.isSelected) ?? application.emails[0] ?? null;
   const gmailStatus = await getGmailConnectionStatus(user.id);
+  const duplicateApplications = await findLikelyDuplicateApplicationsForUser(user.id, application.id);
 
   let matchBlockReason = "Extract and review the job details before running a match.";
   if (extracted && !hasResumeProfile) {
@@ -163,6 +165,10 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             Boolean(application.resumeId) &&
             application.status === "READY"
           }
+          duplicateApplications={duplicateApplications.map((duplicate) => ({
+            ...duplicate,
+            updatedAt: duplicate.updatedAt.toISOString(),
+          }))}
           gmailConnected={gmailStatus.connected}
         />
       ) : null}

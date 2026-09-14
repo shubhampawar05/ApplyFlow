@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { gmailSendRequestSchema } from "@/features/integrations/gmail/gmail.schemas";
 import { GmailServiceError, sendGmailMessageForUser } from "@/features/integrations/gmail/gmail.service";
+import { findLikelyDuplicateApplicationsForUser } from "./application-duplicate.service";
 import {
   getApplicationSendContext,
   recordSuccessfulEmailDelivery,
@@ -10,11 +11,13 @@ import {
 
 export class ApplicationSendError extends Error {
   readonly code: string;
+  readonly details?: unknown;
 
-  constructor(code: string, message: string) {
+  constructor(code: string, message: string, details?: unknown) {
     super(message);
     this.name = "ApplicationSendError";
     this.code = code;
+    this.details = details;
   }
 }
 
@@ -65,6 +68,15 @@ export async function sendApplicationEmailForUser(
     throw new ApplicationSendError(
       "RECIPIENT_MISMATCH",
       "The draft recipient must match the reviewed application email before sending.",
+    );
+  }
+
+  const duplicates = await findLikelyDuplicateApplicationsForUser(userId, application.id);
+  if (duplicates.length > 0 && !request.acknowledgeDuplicate) {
+    throw new ApplicationSendError(
+      "DUPLICATE_WARNING",
+      "This application looks similar to a recent one. Review the duplicate warning and confirm before sending.",
+      { duplicates },
     );
   }
 
