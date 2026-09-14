@@ -1,7 +1,7 @@
 # ApplyFlow — UX Improvement Plan
 
 **Created:** 2026-09-14  
-**Status:** UX-1–UX-3 in progress on `feature/ux-flow-and-ai-indicators`  
+**Status:** UX-1–UX-4 done on `feature/ux-flow-and-ai-indicators`; UX-5 planned  
 **Owner:** Shubham + agent  
 **Related:** `docs/10-DESIGN-SPEC.md`, `docs/11-USER-FLOWS.md`, `docs/15-PROGRESS.md`
 
@@ -148,6 +148,7 @@ Record every UX PR here so we have proof of what changed and when.
 | 2026-09-14 | — | — | Plan created. Baseline: text-only loading labels, no file previews, no application stepper on detail page. |
 | 2026-09-14 | `feature/ux-flow-and-ai-indicators` | UX-1, UX-2 | AI processing banners + button spinners on extract/parse/match/generate-email; 5-step flow stepper + next-action callout on application detail. |
 | 2026-09-14 | `feature/ux-flow-and-ai-indicators` | UX-3 | Auth-scoped media API; screenshot preview on application detail + upload page; resume preview in Settings; attachment chip on send panel. |
+| 2026-09-14 | `feature/ux-flow-and-ai-indicators` | UX-4 | Dashboard card thumbnails, prominent match score badges, improved empty state, mobile filter scroll. |
 | | | | |
 | | | | |
 
