@@ -1,8 +1,10 @@
 # Security and Privacy Specification
 
 ## Authentication
-Use secure OAuth/session handling and server-side authorization checks.
-Protect all application routes and scope data by authenticated user ID.
+Use Supabase Auth with Google OAuth and cookie-based SSR sessions (`@supabase/ssr`).
+Google client ID and secret stay in the Supabase dashboard, never in this repository.
+Protect all application routes in middleware with `getClaims()`, then re-check identity in server code before loading user data.
+Scope every query to the authenticated application `User` row linked by `authUserId`.
 
 ## Gmail
 Request the minimum OAuth scopes required.

@@ -14,6 +14,7 @@ This directory is the product and engineering source of truth.
 - `07-API.md` — API contracts and error conventions.
 - `08-AI-SPEC.md` — AI pipeline, schemas, guardrails, and evaluation.
 - `09-SECURITY.md` — authentication, OAuth, files, privacy, and threat model.
+- `14-AUTH-SETUP.md` — Supabase Auth and Google provider setup (credentials stay in Supabase).
 
 ## UX and delivery
 - `10-DESIGN-SPEC.md` — design system and component behavior.

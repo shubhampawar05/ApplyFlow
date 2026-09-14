@@ -7,7 +7,7 @@
 - PostgreSQL.
 - Prisma.
 - Zod.
-- Google OAuth / Gmail API.
+- Supabase Auth (Google sign-in) and a later Gmail API connection.
 - S3-compatible private object storage.
 - OpenAI-compatible structured AI integration.
 
