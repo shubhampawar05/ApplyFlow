@@ -4,6 +4,7 @@
 User, Resume, ResumeProfile, Job, Application, GeneratedEmail, EmailDelivery, ApplicationEvent, OAuthConnection, AIRequest.
 
 ## Relationships
+A user is linked to exactly one Supabase Auth user via `authUserId`.
 A user owns resumes and jobs.
 A job may have one active application in MVP.
 An application references the resume used and may contain generated emails and delivery events.

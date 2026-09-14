@@ -5,7 +5,7 @@ Start as a modular Next.js monolith with clear domain boundaries.
 Do not introduce microservices until scale or isolation requirements justify them.
 
 ## Runtime
-Browser -> Next.js application -> domain services -> PostgreSQL / object storage / AI provider / Gmail API.
+Browser -> Next.js application (cookie session via Supabase Auth) -> domain services -> PostgreSQL / object storage / AI provider / Gmail API.
 
 ## Domain modules
 - auth
