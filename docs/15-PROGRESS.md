@@ -36,7 +36,21 @@
 | Duplicate detection before send | ✅ Done | PR #13 — warning UI + `acknowledgeDuplicate` |
 | Dashboard analytics + filters | ✅ Done | Summary stats + status filter chips on dashboard |
 
-**Next:** Phase 4 planning (multiple resumes, follow-up reminders)
+**Next:** UX polish (`docs/16-UX-IMPROVEMENT-PLAN.md`) then Phase 4 planning
+
+---
+
+## UX improvements (planned)
+
+| Phase | Focus | Status |
+|-------|-------|--------|
+| UX-1 | AI processing indicators (spinners, banners) | ✅ Done (`feature/ux-flow-and-ai-indicators`) |
+| UX-2 | Application flow stepper on detail page | ✅ Done (`feature/ux-flow-and-ai-indicators`) |
+| UX-3 | Screenshot + resume previews (media API) | ✅ Done (`feature/ux-flow-and-ai-indicators`) |
+| UX-4 | Dashboard card polish | ✅ Done (`feature/ux-flow-and-ai-indicators`) |
+| UX-5 | Toasts, anchors, timeline icons | ✅ Done (`feature/ux-flow-and-ai-indicators`) |
+
+See `docs/16-UX-IMPROVEMENT-PLAN.md` for full spec and **change log**.
 
 ---
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { signOut } from "@/features/auth/actions";
+import { ToastProvider } from "./toast-provider";
 
 const navigation = [
   { href: "/dashboard", label: "Overview" },
@@ -42,7 +43,9 @@ export function AppShell({
           <p>Your application stays in your hands. Nothing is sent without your approval.</p>
         </div>
       </aside>
-      <main className="main">{children}</main>
+      <main className="main">
+        <ToastProvider>{children}</ToastProvider>
+      </main>
     </div>
   );
 }

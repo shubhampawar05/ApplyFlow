@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { Button } from "@/components/button";
+import { useToast } from "@/components/toast-provider";
 
 type JobReviewState = {
   company: string;
@@ -37,9 +39,9 @@ export function JobReviewForm({
   };
 }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
-  const [saved, setSaved] = useState(false);
   const [job, setJob] = useState<JobReviewState>({
     company: initialJob.company ?? "",
     title: initialJob.title ?? "",
@@ -58,7 +60,6 @@ export function JobReviewForm({
     event.preventDefault();
     setPending(true);
     setError(undefined);
-    setSaved(false);
 
     const skills = job.skills
       .split(",")
@@ -90,7 +91,7 @@ export function JobReviewForm({
         return;
       }
 
-      setSaved(true);
+      showToast("Job details saved.");
       router.refresh();
     } catch {
       setError("We could not save your job changes.");
@@ -164,10 +165,9 @@ export function JobReviewForm({
         <textarea rows={5} value={job.description} onChange={(event) => setJob({ ...job, description: event.target.value })} />
       </label>
       {error ? <p className="upload-error" role="alert">{error}</p> : null}
-      {saved ? <p className="quiet-note" role="status">Job details saved.</p> : null}
-      <button className="button" disabled={pending} type="submit">
-        {pending ? "Saving…" : "Save job details"}
-      </button>
+      <Button loading={pending} type="submit">
+        Save job details
+      </Button>
     </form>
   );
 }

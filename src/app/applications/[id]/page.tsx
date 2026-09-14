@@ -1,16 +1,20 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { findLikelyDuplicateApplicationsForUser } from "@/features/applications/application-duplicate.service";
+import { getApplicationFlowState } from "@/features/applications/application-flow-state";
 import { parseStoredMatchDetails } from "@/features/applications/application-match.service";
 import { getApplicationDetailForUser } from "@/features/applications/application.repository";
 import { getDefaultResumeWithProfile } from "@/features/resume/resume.repository";
 import { requireCurrentUser } from "@/features/auth/require-current-user";
 import { getGmailConnectionStatus } from "@/features/integrations/gmail/gmail.service";
 import { ApplicationEmailPanel } from "./application-email-panel";
+import { ApplicationFlowStepper } from "./application-flow-stepper";
 import { ApplicationMatchPanel } from "./application-match-panel";
+import { ApplicationNextAction } from "./application-next-action";
 import { ApplicationSendPanel } from "./application-send-panel";
 import { ApplicationStatusPanel } from "./application-status-panel";
 import { ApplicationTimeline } from "./application-timeline";
+import { ApplicationScreenshotPreview } from "./application-screenshot-preview";
 import { JobExtractButton } from "./job-extract-button";
 import { JobReviewForm } from "./job-review-form";
 
@@ -54,6 +58,13 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const selectedEmail = application.emails.find((email) => email.isSelected) ?? application.emails[0] ?? null;
   const gmailStatus = await getGmailConnectionStatus(user.id);
   const duplicateApplications = await findLikelyDuplicateApplicationsForUser(user.id, application.id);
+  const flow = getApplicationFlowState({
+    hasScreenshot: Boolean(job.screenshotStorageKey),
+    extracted,
+    hasMatch: Boolean(latestMatchEvent),
+    hasEmailDraft: Boolean(selectedEmail),
+    status: application.status,
+  });
 
   let matchBlockReason = "Extract and review the job details before running a match.";
   if (extracted && !hasResumeProfile) {
@@ -83,22 +94,31 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
       <p className="eyebrow">Application</p>
       <h1>{job.title ?? "Review the job posting"}</h1>
       <p className="lede">
-        Status: <strong>{application.status}</strong>. Extract details from your screenshot, review the job, compare
-        your resume, then draft and edit the application email.
+        Status: <strong>{application.status.replaceAll("_", " ")}</strong>. Follow the steps below from screenshot to
+        send — each stage stays editable before you approve anything.
       </p>
 
-      <section className="settings-section">
+      <ApplicationFlowStepper steps={flow.steps} />
+      {flow.nextAction ? <ApplicationNextAction action={flow.nextAction} /> : null}
+
+      <section className="settings-section" id="section-screenshot">
         <p className="section-label">Screenshot intake</p>
         <div className="resume-card" role="status">
           <p className="resume-card-title">
             Saved screenshot: <strong>{screenshotLabel(job.screenshotStorageKey)}</strong>
           </p>
           <p className="quiet-note">Uploaded {application.createdAt.toLocaleString()}</p>
+          {job.screenshotStorageKey ? (
+            <ApplicationScreenshotPreview
+              fileName={screenshotLabel(job.screenshotStorageKey)}
+              jobId={job.id}
+            />
+          ) : null}
           <JobExtractButton hasExtractedFields={extracted} jobId={job.id} />
         </div>
       </section>
 
-      <section className="settings-section">
+      <section className="settings-section" id="section-job-review">
         <p className="section-label">Job review</p>
         {extracted ? (
           <JobReviewForm
@@ -171,6 +191,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           }))}
           gmailConnected={gmailStatus.connected}
           resumeFileName={defaultResume?.fileName ?? null}
+          resumeId={defaultResume?.id ?? null}
         />
       ) : null}
 

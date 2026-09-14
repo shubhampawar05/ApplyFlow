@@ -444,9 +444,11 @@ export async function listApplicationsForUser(
       updatedAt: true,
       job: {
         select: {
+          id: true,
           company: true,
           title: true,
           applicationEmail: true,
+          screenshotStorageKey: true,
         },
       },
     },

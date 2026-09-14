@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AttachmentChip } from "@/components/attachment-chip";
+import { Button } from "@/components/button";
+import { useToast } from "@/components/toast-provider";
+import { mediaUrl } from "@/lib/media/urls";
 
 type DuplicateApplication = {
   id: string;
@@ -23,6 +27,7 @@ export function ApplicationSendPanel({
   applicationStatus,
   duplicateApplications,
   resumeFileName,
+  resumeId,
 }: {
   applicationId: string;
   canSend: boolean;
@@ -31,8 +36,10 @@ export function ApplicationSendPanel({
   applicationStatus: string;
   duplicateApplications: DuplicateApplication[];
   resumeFileName?: string | null;
+  resumeId?: string | null;
 }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [confirmed, setConfirmed] = useState(false);
   const [acknowledgedDuplicate, setAcknowledgedDuplicate] = useState(false);
   const [pending, setPending] = useState(false);
@@ -75,6 +82,7 @@ export function ApplicationSendPanel({
       }
 
       setSent(true);
+      showToast("Application email sent.");
       router.refresh();
     } catch {
       setError("Gmail could not send this email. Your draft is still saved.");
@@ -85,7 +93,7 @@ export function ApplicationSendPanel({
 
   if (sent) {
     return (
-      <section className="settings-section">
+      <section className="settings-section" id="section-send">
         <p className="section-label">Send application</p>
         <div className="resume-card send-success-card" role="status">
           <p className="resume-card-title"><strong>Application email sent.</strong></p>
@@ -96,7 +104,7 @@ export function ApplicationSendPanel({
   }
 
   return (
-    <section className="settings-section">
+    <section className="settings-section" id="section-send">
       <p className="section-label">Send application</p>
 
       {!canSend ? (
@@ -127,10 +135,16 @@ export function ApplicationSendPanel({
             </div>
           ) : null}
           <p className="quiet-note">
-            This action sends the saved draft through your connected Gmail account
-            {resumeFileName ? ` with your resume attached (${resumeFileName})` : " with your resume attached"}.
-            Review the subject, body, and recipient carefully before continuing.
+            This action sends the saved draft through your connected Gmail account with your resume attached. Review the
+            subject, body, and recipient carefully before continuing.
           </p>
+          {resumeFileName && resumeId ? (
+            <AttachmentChip
+              fileName={resumeFileName}
+              href={mediaUrl("resume", resumeId)}
+              label="Will attach on send"
+            />
+          ) : null}
           <label className="send-confirm">
             <input checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} type="checkbox" />
             <span>I have reviewed this email and approve sending it now.</span>
@@ -145,9 +159,9 @@ export function ApplicationSendPanel({
               <span>I understand this may duplicate a recent application and still want to send.</span>
             </label>
           ) : null}
-          <button className="button send-button" disabled={pending || !canSubmit} onClick={handleSend} type="button">
-            {pending ? "Sending through Gmail…" : "Send application email"}
-          </button>
+          <Button className="send-button" disabled={!canSubmit} loading={pending} onClick={handleSend} type="button">
+            Send application email
+          </Button>
           {error ? (
             <p className="upload-error" role="alert">
               {error}
