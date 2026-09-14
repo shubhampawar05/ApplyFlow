@@ -86,4 +86,10 @@ h1 { margin: 0; font-size: clamp(29px, 4vw, 42px); line-height: 1.08; letter-spa
 .skill-tag { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
 .skill-tag.matched { background: var(--accent-soft); color: #224c39; }
 .skill-tag.missing { background: #f6ece8; color: #8a4a32; }
+.send-card { max-width: 720px; padding: 20px; border: 1px solid #d8b4a0; border-radius: 12px; background: #fff8f3; }
+.send-confirm { display: flex; align-items: flex-start; gap: 10px; margin: 16px 0; color: var(--ink); font-size: 14px; line-height: 1.5; }
+.send-confirm input { margin-top: 3px; }
+.send-button { background: #9b3d2e; }
+.send-button:hover { background: #7f3126; }
+.send-success-card { border-color: #cbdacd; background: var(--accent-soft); color: #224c39; }
 @media (max-width: 760px) { .shell { display: block; } .sidebar { position: static; height: auto; padding: 18px; border-right: 0; border-bottom: 1px solid var(--line); } .nav { display: flex; gap: 3px; margin-top: 18px; overflow-x: auto; } .nav-link { white-space: nowrap; } .sidebar-foot { display: none; } .main { padding: 30px 20px 48px; } .topbar { align-items: flex-start; margin-bottom: 34px; } .topbar .button { display: none; } .progress { grid-template-columns: 1fr; } .empty-card { padding: 28px; } .upload-actions { flex-direction: column-reverse; } }

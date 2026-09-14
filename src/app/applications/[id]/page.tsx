@@ -4,8 +4,10 @@ import { parseStoredMatchDetails } from "@/features/applications/application-mat
 import { getApplicationDetailForUser } from "@/features/applications/application.repository";
 import { getDefaultResumeWithProfile } from "@/features/resume/resume.repository";
 import { requireCurrentUser } from "@/features/auth/require-current-user";
+import { getGmailConnectionStatus } from "@/features/integrations/gmail/gmail.service";
 import { ApplicationEmailPanel } from "./application-email-panel";
 import { ApplicationMatchPanel } from "./application-match-panel";
+import { ApplicationSendPanel } from "./application-send-panel";
 import { JobExtractButton } from "./job-extract-button";
 import { JobReviewForm } from "./job-review-form";
 
@@ -47,6 +49,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const latestMatchEvent = application.events[0];
   const initialMatch = parseStoredMatchDetails(latestMatchEvent?.metadata);
   const selectedEmail = application.emails.find((email) => email.isSelected) ?? application.emails[0] ?? null;
+  const gmailStatus = await getGmailConnectionStatus(user.id);
 
   let matchBlockReason = "Extract and review the job details before running a match.";
   if (extracted && !hasResumeProfile) {
@@ -60,6 +63,15 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
     emailBlockReason = "Upload and parse your resume in Settings before generating an email.";
   } else if (extracted && hasResumeProfile && !hasRecipientEmail) {
     emailBlockReason = "Add a valid application email on the job review form before generating a draft.";
+  }
+
+  let sendBlockReason = "Generate and save an email draft before sending.";
+  if (extracted && selectedEmail && application.status !== "READY" && application.status !== "SENT") {
+    sendBlockReason = "Save your email draft to mark the application READY before sending.";
+  } else if (extracted && selectedEmail && !gmailStatus.connected) {
+    sendBlockReason = "Connect Gmail in Settings before sending this application.";
+  } else if (extracted && selectedEmail && !application.resumeId) {
+    sendBlockReason = "This application needs a selected resume before sending.";
   }
 
   return (
@@ -136,6 +148,20 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
                 }
               : null
           }
+        />
+      ) : null}
+
+      {extracted && selectedEmail ? (
+        <ApplicationSendPanel
+          applicationId={application.id}
+          applicationStatus={application.status}
+          blockReason={sendBlockReason}
+          canSend={
+            gmailStatus.connected &&
+            Boolean(application.resumeId) &&
+            application.status === "READY"
+          }
+          gmailConnected={gmailStatus.connected}
         />
       ) : null}
     </AppShell>

@@ -266,6 +266,74 @@ export async function markApplicationAnalyzedForJob(userId: string, jobId: strin
   });
 }
 
+export async function getApplicationSendContext(userId: string, applicationId: string) {
+  return prisma.application.findFirst({
+    where: { id: applicationId, userId },
+    include: {
+      job: true,
+      emails: {
+        orderBy: [{ isSelected: "desc" }, { createdAt: "desc" }],
+      },
+    },
+  });
+}
+
+export async function recordSuccessfulEmailDelivery(input: {
+  applicationId: string;
+  generatedEmailId: string;
+  recipient: string;
+  providerMessageId: string;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const application = await tx.application.findUnique({
+      where: { id: input.applicationId },
+      select: { id: true, status: true },
+    });
+
+    if (!application) {
+      throw new Error("APPLICATION_NOT_FOUND");
+    }
+
+    const delivery = await tx.emailDelivery.create({
+      data: {
+        applicationId: input.applicationId,
+        generatedEmailId: input.generatedEmailId,
+        recipient: input.recipient,
+        providerMessageId: input.providerMessageId,
+        sentAt: new Date(),
+      },
+    });
+
+    const updatedApplication = await tx.application.update({
+      where: { id: input.applicationId },
+      data: { status: "SENT" },
+      select: {
+        id: true,
+        status: true,
+        jobId: true,
+        resumeId: true,
+        matchScore: true,
+        updatedAt: true,
+      },
+    });
+
+    await tx.applicationEvent.create({
+      data: {
+        applicationId: input.applicationId,
+        type: "EMAIL_SENT",
+        fromStatus: application.status,
+        toStatus: "SENT",
+        metadata: {
+          providerMessageId: input.providerMessageId,
+          generatedEmailId: input.generatedEmailId,
+        },
+      },
+    });
+
+    return { application: updatedApplication, delivery };
+  });
+}
+
 export async function createDraftApplicationForJob(userId: string, jobId: string) {
   const defaultResume = await prisma.resume.findFirst({
     where: { userId, isDefault: true },
