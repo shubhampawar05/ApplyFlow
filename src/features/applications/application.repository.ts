@@ -9,6 +9,38 @@ export async function getApplicationForUser(userId: string, applicationId: strin
   });
 }
 
+export async function markApplicationAnalyzedForJob(userId: string, jobId: string) {
+  const application = await prisma.application.findFirst({
+    where: { userId, jobId },
+  });
+
+  if (!application) {
+    return null;
+  }
+
+  if (application.status === "ANALYZED") {
+    return application;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.application.update({
+      where: { id: application.id },
+      data: { status: "ANALYZED" },
+    });
+
+    await tx.applicationEvent.create({
+      data: {
+        applicationId: application.id,
+        type: "STATUS_CHANGED",
+        fromStatus: application.status,
+        toStatus: "ANALYZED",
+      },
+    });
+
+    return updated;
+  });
+}
+
 export async function createDraftApplicationForJob(userId: string, jobId: string) {
   const defaultResume = await prisma.resume.findFirst({
     where: { userId, isDefault: true },

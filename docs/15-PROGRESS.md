@@ -1,47 +1,19 @@
 # ApplyFlow — Build Progress
 
-Living tracker for what is shipped on `main`, what is in progress, and what is still ahead.
-Update this file at the end of each merged feature branch.
-
-**Last updated:** 2026-09-14 (`feature/job-screenshot-intake` in progress)
+**Last updated:** 2026-09-14 (`feature/job-extraction` ready for test + PR)
 
 ---
 
-## Phase 0 — Foundation
-
-| Item | Status |
-|------|--------|
-| Auth, database, storage, tests | ✅ Done |
-
-**Phase 0:** ✅ Complete
-
----
-
-## Phase 1 — Resume + job intake (current focus)
+## Phase 1 — Resume + job intake
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Job intake domain | ✅ Done | PR #2 |
-| Resume upload + parse + profile review | ✅ Done | PR #3, PR #4 |
-| **Job screenshot upload (persisted)** | 🔧 In progress | `feature/job-screenshot-intake` |
-| **Application draft created from screenshot** | 🔧 In progress | `Job` + `Application` DRAFT |
-| Vision-based job extraction | ⬜ Left | `POST /api/jobs/extract` |
-| Editable job review screen | ⬜ Left | After extraction |
+| Resume upload + parse + profile review | ✅ Done | PR #3, #4 |
+| Job screenshot upload + draft application | ✅ Done | PR #5 |
+| **Vision-based job extraction** | 🟡 Ready to test | `POST /api/jobs/:id/extract`, gpt-4o vision |
+| **Editable job review screen** | 🟡 Ready to test | Application detail page + `PATCH /api/jobs/:id` |
 
-**Recommended next branch:** `feature/job-screenshot-intake` (finish + merge)  
-**Then:** `feature/job-extraction` (AI + editable review)
-
----
-
-## Phase 2 — Match, email, Gmail send
-
-| Item | Status |
-|------|--------|
-| Resume/job match score | ⬜ Left |
-| Email generation (grounded) | ⬜ Left |
-| Email preview + edit | ⬜ Left |
-| Gmail OAuth (send scopes) | ⬜ Left |
-| Send with explicit approval | ⬜ Left |
+**Next after merge:** resume/job match score (Phase 2)
 
 ---
 
@@ -49,17 +21,8 @@ Update this file at the end of each merged feature branch.
 
 | PR | Branch | What it added |
 |----|--------|----------------|
-| #1 | `feature/auth-foundation` | Data + auth |
-| #2 | `feature/job-intake-domain` | Job schemas, normalization |
-| #3 | `feature/resume-foundation` | Resume upload + storage |
+| #5 | `feature/job-screenshot-intake` | Screenshot → Job + Application DRAFT |
 | #4 | `feature/resume-parsing` | Resume parse + profile review |
-
----
-
-## Environment
-
-| Variable | Status |
-|----------|--------|
-| `STORAGE_*` | ✅ Configured |
-| `OPENAI_API_KEY` | ✅ Configured |
-| Gmail OAuth env | Phase 2 only |
+| #3 | `feature/resume-foundation` | Resume upload |
+| #2 | `feature/job-intake-domain` | Job schemas |
+| #1 | `feature/auth-foundation` | Auth + data |
