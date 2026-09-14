@@ -17,7 +17,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is accepted as an alias for the anon/publishable key.
 Do not put the service-role key in this app.
 
-Gmail send will use separate Google OAuth credentials in a later milestone. Those are not used for login.
+Gmail send uses **separate** Google OAuth credentials from Supabase login. Do not reuse the Supabase Google provider client for Gmail scopes.
 
 ## Supabase dashboard
 
@@ -40,3 +40,17 @@ Gmail send will use separate Google OAuth credentials in a later milestone. Thos
 ## Local database user
 
 On successful Google sign-in, `/auth/callback` exchanges the PKCE code for a cookie session and upserts a `User` row keyed by `authUserId` (the Supabase Auth user id). Application data stays scoped to that row, not to a client-supplied id.
+
+## Gmail send OAuth (separate from login)
+
+1. Create a second OAuth client in Google Cloud (or reuse the same project with a separate client) for Gmail send.
+2. Authorized redirect URI: `http://localhost:3000/api/integrations/gmail/callback` (add production later).
+3. Enable the Gmail API for the project.
+4. Request scope: `https://www.googleapis.com/auth/gmail.send` only.
+5. Add to `.env`:
+   - `GOOGLE_CLIENT_ID`
+   - `GOOGLE_CLIENT_SECRET`
+   - `GOOGLE_REDIRECT_URI`
+   - `OAUTH_TOKEN_ENCRYPTION_KEY` (long random secret for encrypting stored tokens)
+
+Users connect Gmail from **Settings**. Sending still requires explicit per-application confirmation in the UI.

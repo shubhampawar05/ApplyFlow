@@ -1,7 +1,10 @@
+import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { requireCurrentUser } from "@/features/auth/require-current-user";
 import { resumeProfileContentSchema } from "@/features/ai/resume-parsing.schema";
+import { getGmailConnectionStatus } from "@/features/integrations/gmail/gmail.service";
 import { getDefaultProfileForUser } from "@/features/resume/resume-profile.service";
+import { GmailConnectPanel } from "./gmail-connect-panel";
 import { ResumeParseButton } from "./resume-parse-button";
 import { ResumeProfileReview } from "./resume-profile-review";
 import { ResumeUploadForm } from "./resume-upload-form";
@@ -18,6 +21,7 @@ export default async function SettingsPage() {
   const resume = resumeBundle?.resume;
   const profile = resumeBundle?.profile;
   const parsedContent = profile?.content ? resumeProfileContentSchema.parse(profile.content) : null;
+  const gmailStatus = await getGmailConnectionStatus(user.id);
 
   return (
     <AppShell activePath="/settings" userLabel={user.displayName ?? user.email}>
@@ -71,6 +75,10 @@ export default async function SettingsPage() {
           </div>
         </section>
       ) : null}
+
+      <Suspense fallback={null}>
+        <GmailConnectPanel initialStatus={gmailStatus} />
+      </Suspense>
     </AppShell>
   );
 }
