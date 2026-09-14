@@ -92,4 +92,21 @@ h1 { margin: 0; font-size: clamp(29px, 4vw, 42px); line-height: 1.08; letter-spa
 .send-button { background: #9b3d2e; }
 .send-button:hover { background: #7f3126; }
 .send-success-card { border-color: #cbdacd; background: var(--accent-soft); color: #224c39; }
+.application-list { display: grid; gap: 12px; max-width: 920px; }
+.application-card { display: grid; gap: 12px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); transition: border-color .15s ease, transform .15s ease; }
+.application-card:hover { border-color: #bfc6bd; transform: translateY(-1px); }
+.application-card-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.application-card-head h2 { margin: 0; font-size: 18px; letter-spacing: -.03em; }
+.application-card-head p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.application-card-meta { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 12px; }
+.status-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; background: var(--surface-subtle); color: var(--ink); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.status-badge.ready { background: #eef5ff; color: #2f4f7a; }
+.status-badge.positive { background: var(--accent-soft); color: #224c39; }
+.status-badge.muted { background: #f1f1ee; color: #666a63; }
+.status-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.status-actions .active-status { border-color: var(--accent); color: var(--accent-dark); }
+.application-timeline { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; max-width: 720px; }
+.application-timeline li { display: flex; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.application-timeline strong { font-size: 14px; }
+.application-timeline span { color: var(--muted); font-size: 12px; white-space: nowrap; }
 @media (max-width: 760px) { .shell { display: block; } .sidebar { position: static; height: auto; padding: 18px; border-right: 0; border-bottom: 1px solid var(--line); } .nav { display: flex; gap: 3px; margin-top: 18px; overflow-x: auto; } .nav-link { white-space: nowrap; } .sidebar-foot { display: none; } .main { padding: 30px 20px 48px; } .topbar { align-items: flex-start; margin-bottom: 34px; } .topbar .button { display: none; } .progress { grid-template-columns: 1fr; } .empty-card { padding: 28px; } .upload-actions { flex-direction: column-reverse; } }

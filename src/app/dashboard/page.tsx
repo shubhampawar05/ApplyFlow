@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
+import { listApplicationsForUser } from "@/features/applications/application.repository";
 import { requireCurrentUser } from "@/features/auth/require-current-user";
+import { ApplicationList } from "./application-list";
 
 export default async function DashboardPage() {
   const user = await requireCurrentUser("/dashboard");
+  const applications = await listApplicationsForUser(user.id);
 
   return (
     <AppShell activePath="/dashboard" userLabel={user.displayName ?? user.email}>
@@ -24,19 +27,7 @@ export default async function DashboardPage() {
         <p className="section-label" id="recent-applications">
           Recent applications
         </p>
-        <div className="empty-card">
-          <div className="empty-icon" aria-hidden="true">
-            ⌁
-          </div>
-          <h2>Your application list is ready when you are.</h2>
-          <p>
-            Your first job screenshot becomes a draft you can check, refine, and choose to send. Nothing leaves
-            ApplyFlow without your explicit approval.
-          </p>
-          <Link className="button" href="/applications/new">
-            Add your first screenshot
-          </Link>
-        </div>
+        <ApplicationList applications={applications} />
       </section>
     </AppShell>
   );
