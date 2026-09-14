@@ -6,6 +6,7 @@ import { getGmailConnectionStatus } from "@/features/integrations/gmail/gmail.se
 import { getDefaultProfileForUser } from "@/features/resume/resume-profile.service";
 import { GmailConnectPanel } from "./gmail-connect-panel";
 import { ResumeParseButton } from "./resume-parse-button";
+import { ResumePreview } from "./resume-preview";
 import { ResumeProfileReview } from "./resume-profile-review";
 import { ResumeUploadForm } from "./resume-upload-form";
 
@@ -42,6 +43,7 @@ export default async function SettingsPage() {
             <p className="quiet-note">
               {formatFileSize(resume.byteSize)} · uploaded {resume.createdAt.toLocaleDateString()}
             </p>
+            <ResumePreview fileName={resume.fileName} mimeType={resume.mimeType} resumeId={resume.id} />
             <ResumeParseButton hasProfile={Boolean(profile)} resumeId={resume.id} />
           </div>
         ) : (

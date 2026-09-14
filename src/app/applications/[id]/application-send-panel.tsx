@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AttachmentChip } from "@/components/attachment-chip";
 import { Button } from "@/components/button";
+import { mediaUrl } from "@/lib/media/urls";
 
 type DuplicateApplication = {
   id: string;
@@ -24,6 +26,7 @@ export function ApplicationSendPanel({
   applicationStatus,
   duplicateApplications,
   resumeFileName,
+  resumeId,
 }: {
   applicationId: string;
   canSend: boolean;
@@ -32,6 +35,7 @@ export function ApplicationSendPanel({
   applicationStatus: string;
   duplicateApplications: DuplicateApplication[];
   resumeFileName?: string | null;
+  resumeId?: string | null;
 }) {
   const router = useRouter();
   const [confirmed, setConfirmed] = useState(false);
@@ -128,10 +132,16 @@ export function ApplicationSendPanel({
             </div>
           ) : null}
           <p className="quiet-note">
-            This action sends the saved draft through your connected Gmail account
-            {resumeFileName ? ` with your resume attached (${resumeFileName})` : " with your resume attached"}.
-            Review the subject, body, and recipient carefully before continuing.
+            This action sends the saved draft through your connected Gmail account with your resume attached. Review the
+            subject, body, and recipient carefully before continuing.
           </p>
+          {resumeFileName && resumeId ? (
+            <AttachmentChip
+              fileName={resumeFileName}
+              href={mediaUrl("resume", resumeId)}
+              label="Will attach on send"
+            />
+          ) : null}
           <label className="send-confirm">
             <input checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} type="checkbox" />
             <span>I have reviewed this email and approve sending it now.</span>

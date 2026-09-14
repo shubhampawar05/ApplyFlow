@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useId, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useId, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 
 const maxFileSize = 10 * 1024 * 1024;
@@ -13,24 +13,51 @@ export function NewApplicationPage({ userLabel }: { userLabel: string }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string>();
+  const [previewUrl, setPreviewUrl] = useState<string>();
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  function clearSelection() {
+    setFileName(undefined);
+    setError(undefined);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(undefined);
+    }
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+  }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!allowedTypes.has(file.type)) {
-      setFileName(undefined);
+      clearSelection();
       setError("Choose a PNG, JPG, or WEBP image.");
       return;
     }
     if (file.size > maxFileSize) {
-      setFileName(undefined);
+      clearSelection();
       setError("This image is larger than 10 MB. Please choose a smaller file.");
       return;
     }
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
     setError(undefined);
     setFileName(file.name);
+    setPreviewUrl(URL.createObjectURL(file));
   }
 
   async function handleContinue() {
@@ -97,13 +124,19 @@ export function NewApplicationPage({ userLabel }: { userLabel: string }) {
         </div>
       </div>
       <section className="upload-card" aria-labelledby="upload-heading">
-        <label className="dropzone" htmlFor={inputId}>
-          <div>
-            <div className="upload-symbol" aria-hidden="true">↑</div>
-            <h2 id="upload-heading">Drop a screenshot here</h2>
-            <p>or choose an image from your device</p>
-            <p className="file-types">PNG, JPG, or WEBP · up to 10 MB</p>
-          </div>
+        <label className={`dropzone ${previewUrl ? "has-preview" : ""}`} htmlFor={inputId}>
+          {previewUrl ? (
+            <div className="upload-preview">
+              <img alt={`Selected screenshot preview: ${fileName ?? "job posting"}`} src={previewUrl} />
+            </div>
+          ) : (
+            <div>
+              <div className="upload-symbol" aria-hidden="true">↑</div>
+              <h2 id="upload-heading">Drop a screenshot here</h2>
+              <p>or choose an image from your device</p>
+              <p className="file-types">PNG, JPG, or WEBP · up to 10 MB</p>
+            </div>
+          )}
           <input
             ref={inputRef}
             className="file-input"
@@ -121,15 +154,7 @@ export function NewApplicationPage({ userLabel }: { userLabel: string }) {
         {fileName && (
           <div className="upload-ready" role="status">
             <span>Ready to review: {fileName}</span>
-            <button
-              className="button secondary"
-              type="button"
-              onClick={() => {
-                setFileName(undefined);
-                setError(undefined);
-                if (inputRef.current) inputRef.current.value = "";
-              }}
-            >
+            <button className="button secondary" onClick={clearSelection} type="button">
               Remove
             </button>
           </div>

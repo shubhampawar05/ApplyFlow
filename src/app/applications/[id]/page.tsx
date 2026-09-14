@@ -14,6 +14,7 @@ import { ApplicationNextAction } from "./application-next-action";
 import { ApplicationSendPanel } from "./application-send-panel";
 import { ApplicationStatusPanel } from "./application-status-panel";
 import { ApplicationTimeline } from "./application-timeline";
+import { ApplicationScreenshotPreview } from "./application-screenshot-preview";
 import { JobExtractButton } from "./job-extract-button";
 import { JobReviewForm } from "./job-review-form";
 
@@ -107,6 +108,12 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             Saved screenshot: <strong>{screenshotLabel(job.screenshotStorageKey)}</strong>
           </p>
           <p className="quiet-note">Uploaded {application.createdAt.toLocaleString()}</p>
+          {job.screenshotStorageKey ? (
+            <ApplicationScreenshotPreview
+              fileName={screenshotLabel(job.screenshotStorageKey)}
+              jobId={job.id}
+            />
+          ) : null}
           <JobExtractButton hasExtractedFields={extracted} jobId={job.id} />
         </div>
       </section>
@@ -184,6 +191,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           }))}
           gmailConnected={gmailStatus.connected}
           resumeFileName={defaultResume?.fileName ?? null}
+          resumeId={defaultResume?.id ?? null}
         />
       ) : null}
 

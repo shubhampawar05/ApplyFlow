@@ -77,6 +77,23 @@ h1 { margin: 0; font-size: clamp(29px, 4vw, 42px); line-height: 1.08; letter-spa
 .next-action-callout p { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.5; }
 .next-action-link { color: var(--accent-dark); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .next-action-link:hover { text-decoration: underline; }
+.media-preview { margin-top: 14px; }
+.media-preview-thumb { display: block; width: 100%; max-width: 360px; padding: 0; border: 1px solid #cbdacd; border-radius: 10px; overflow: hidden; background: #fff; cursor: zoom-in; }
+.media-preview-thumb img { display: block; width: 100%; max-height: 220px; object-fit: cover; object-position: top; }
+.media-lightbox { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgba(23, 24, 23, .78); }
+.media-lightbox-image { max-width: min(960px, 100%); max-height: calc(100vh - 96px); border-radius: 12px; background: #fff; }
+.media-lightbox-close { position: absolute; top: 20px; right: 20px; min-height: 38px; padding: 0 14px; border: 0; border-radius: 7px; background: #fff; color: var(--ink); cursor: pointer; font-size: 13px; font-weight: 700; }
+.upload-preview { width: 100%; max-width: 520px; }
+.upload-preview img { display: block; width: 100%; max-height: 360px; object-fit: contain; border-radius: 8px; background: #f7f7f5; }
+.dropzone.has-preview { min-height: auto; padding: 18px; }
+.resume-preview { margin-top: 14px; }
+.resume-preview-frame { display: block; width: 100%; max-width: 720px; height: 420px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.file-preview-chip, .attachment-chip { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: inherit; }
+.attachment-chip:hover { border-color: #bfc6bd; background: var(--surface-subtle); }
+.file-preview-icon, .attachment-chip-icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 8px; background: var(--accent-soft); color: var(--accent-dark); font-size: 11px; font-weight: 800; letter-spacing: .04em; }
+.attachment-chip-copy, .file-preview-chip div { display: grid; gap: 2px; }
+.attachment-chip-copy strong, .file-preview-chip strong { font-size: 13px; }
+.attachment-chip-copy span, .file-preview-chip p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
 .section-label { margin: 0 0 12px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
 .empty-card { max-width: 720px; padding: 42px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 .empty-icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 9px; background: var(--accent-soft); color: var(--accent-dark); font-size: 20px; }

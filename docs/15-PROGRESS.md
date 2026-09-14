@@ -46,7 +46,7 @@
 |-------|-------|--------|
 | UX-1 | AI processing indicators (spinners, banners) | ✅ Done (`feature/ux-flow-and-ai-indicators`) |
 | UX-2 | Application flow stepper on detail page | ✅ Done (`feature/ux-flow-and-ai-indicators`) |
-| UX-3 | Screenshot + resume previews (media API) | 📋 Planned |
+| UX-3 | Screenshot + resume previews (media API) | ✅ Done (`feature/ux-flow-and-ai-indicators`) |
 | UX-4 | Dashboard card polish | 📋 Planned |
 | UX-5 | Toasts, anchors, timeline icons | 📋 Planned |
 
