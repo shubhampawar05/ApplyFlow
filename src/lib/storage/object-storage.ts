@@ -1,5 +1,5 @@
 import "server-only";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getStorageClient } from "./client";
 import { getStorageEnv } from "./env";
 
@@ -19,4 +19,16 @@ export async function uploadPrivateObject(input: {
       ContentType: input.contentType,
     }),
   );
+}
+
+export async function downloadPrivateObject(key: string) {
+  const { bucket } = getStorageEnv();
+  const client = getStorageClient();
+  const response = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+
+  if (!response.Body) {
+    throw new Error("STORAGE_OBJECT_NOT_FOUND");
+  }
+
+  return new Uint8Array(await response.Body.transformToByteArray());
 }

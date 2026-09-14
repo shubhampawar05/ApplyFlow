@@ -1,6 +1,9 @@
 import { AppShell } from "@/components/app-shell";
 import { requireCurrentUser } from "@/features/auth/require-current-user";
-import { listResumesForUser } from "@/features/resume/resume.repository";
+import { resumeProfileContentSchema } from "@/features/ai/resume-parsing.schema";
+import { getDefaultProfileForUser } from "@/features/resume/resume-profile.service";
+import { ResumeParseButton } from "./resume-parse-button";
+import { ResumeProfileReview } from "./resume-profile-review";
 import { ResumeUploadForm } from "./resume-upload-form";
 
 function formatFileSize(bytes: number) {
@@ -11,37 +14,63 @@ function formatFileSize(bytes: number) {
 
 export default async function SettingsPage() {
   const user = await requireCurrentUser("/settings");
-  const resumes = await listResumesForUser(user.id);
-  const defaultResume = resumes.find((resume) => resume.isDefault) ?? resumes[0];
+  const resumeBundle = await getDefaultProfileForUser(user.id);
+  const resume = resumeBundle?.resume;
+  const profile = resumeBundle?.profile;
+  const parsedContent = profile?.content ? resumeProfileContentSchema.parse(profile.content) : null;
 
   return (
     <AppShell activePath="/settings" userLabel={user.displayName ?? user.email}>
       <p className="eyebrow">Settings</p>
       <h1>Set up your application profile.</h1>
       <p className="lede">
-        You are signed in as {user.email}. Upload the resume ApplyFlow should ground applications on. Gmail connection
-        controls will be added in a later milestone.
+        You are signed in as {user.email}. Upload your resume, parse it into a structured profile, and review the facts
+        ApplyFlow can use in applications.
       </p>
 
       <section aria-labelledby="resume-section" className="settings-section">
         <p className="section-label" id="resume-section">Resume</p>
-        {defaultResume ? (
+        {resume ? (
           <div className="resume-card" role="status">
             <p className="resume-card-title">
-              Current resume: <strong>{defaultResume.fileName}</strong>
+              Current resume: <strong>{resume.fileName}</strong>
             </p>
             <p className="quiet-note">
-              {formatFileSize(defaultResume.byteSize)} · uploaded {defaultResume.createdAt.toLocaleDateString()}
+              {formatFileSize(resume.byteSize)} · uploaded {resume.createdAt.toLocaleDateString()}
             </p>
+            <ResumeParseButton hasProfile={Boolean(profile)} resumeId={resume.id} />
           </div>
         ) : (
           <div className="empty-card">
             <h2>Add the resume you want applications grounded on.</h2>
-            <p>Your file stays private in Supabase Storage. Parsing and profile review come in the next step.</p>
+            <p>Your file stays private in Supabase Storage. After upload, parse it to create your profile.</p>
           </div>
         )}
         <ResumeUploadForm />
       </section>
+
+      {resume && profile && parsedContent ? (
+        <section className="settings-section">
+          <ResumeProfileReview
+            initialProfile={{
+              fullName: profile.fullName,
+              headline: profile.headline,
+              email: profile.email,
+              phone: profile.phone,
+              location: profile.location,
+              content: parsedContent,
+            }}
+            resumeId={resume.id}
+          />
+        </section>
+      ) : resume ? (
+        <section className="settings-section">
+          <div className="empty-card">
+            <h2>Parse your resume to review the profile.</h2>
+            <p>ApplyFlow will extract contact details, skills, and experience without inventing missing facts.</p>
+          </div>
+        </section>
+      ) : null}
     </AppShell>
   );
 }
