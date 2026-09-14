@@ -1,6 +1,6 @@
 # ApplyFlow — Build Progress
 
-**Last updated:** 2026-09-14 (`feature/job-extraction` ready for test + PR)
+**Last updated:** 2026-09-14 (`feature/phase-2-match-and-email` in progress)
 
 ---
 
@@ -10,10 +10,20 @@
 |------|--------|-------|
 | Resume upload + parse + profile review | ✅ Done | PR #3, #4 |
 | Job screenshot upload + draft application | ✅ Done | PR #5 |
-| **Vision-based job extraction** | 🟡 Ready to test | `POST /api/jobs/:id/extract`, gpt-4o vision |
-| **Editable job review screen** | 🟡 Ready to test | Application detail page + `PATCH /api/jobs/:id` |
+| Vision-based job extraction | ✅ Done | PR #6, #7 |
+| Editable job review screen | ✅ Done | Application detail page + `PATCH /api/jobs/:id` |
 
-**Next after merge:** resume/job match score (Phase 2)
+---
+
+## Phase 2 — Match, email, send
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Resume/job match score | 🔧 In progress | `POST /api/applications/:id/match`, match review UI |
+| Email generation + preview/edit | 🔧 In progress | `POST /api/applications/:id/generate-email`, `PATCH /api/applications/:id/email` |
+| Gmail OAuth + send | ⬜ Not started | `POST /api/applications/:id/send` |
+
+**Next after email review:** Gmail OAuth + explicit send flow
 
 ---
 
@@ -21,6 +31,9 @@
 
 | PR | Branch | What it added |
 |----|--------|----------------|
+| #8 | `chore/cursor-agent-setup` | Cursor agent rules, skill, file headers |
+| #7 | `fix/job-extraction-schema` | Vision extraction OpenAI schema fix |
+| #6 | `feature/job-extraction` | Vision extraction + job review |
 | #5 | `feature/job-screenshot-intake` | Screenshot → Job + Application DRAFT |
 | #4 | `feature/resume-parsing` | Resume parse + profile review |
 | #3 | `feature/resume-foundation` | Resume upload |
