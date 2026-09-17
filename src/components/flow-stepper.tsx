@@ -3,30 +3,30 @@
 // Purpose: reusable horizontal stepper showing complete, current, and upcoming steps.
 // Constraints: presentational only; step state and navigation callbacks come from parents.
 
-export type FlowStepperItem = {
-  id: string;
+export type FlowStepperItem<T extends string = string> = {
+  id: T;
   label: string;
   description?: string;
   status: "complete" | "current" | "upcoming";
 };
 
-type FlowStepperProps = {
-  steps: FlowStepperItem[];
-  activeStepId?: string;
-  onStepSelect?: (stepId: string) => void;
+type FlowStepperProps<T extends string = string> = {
+  steps: FlowStepperItem<T>[];
+  activeStepId?: T;
+  onStepSelect?: (stepId: T) => void;
   ariaLabel?: string;
 };
 
-function canSelectStep(step: FlowStepperItem) {
+function canSelectStep<T extends string>(step: FlowStepperItem<T>) {
   return step.status === "complete" || step.status === "current";
 }
 
-export function FlowStepper({
+export function FlowStepper<T extends string = string>({
   steps,
   activeStepId,
   onStepSelect,
   ariaLabel = "Application progress",
-}: FlowStepperProps) {
+}: FlowStepperProps<T>) {
   return (
     <ol aria-label={ariaLabel} className="flow-stepper">
       {steps.map((step, index) => {
