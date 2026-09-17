@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Button } from "@/components/button";
 import { useToast } from "@/components/toast-provider";
+import { getApiErrorMessage } from "@/lib/api/error-message";
+import { useApplicationFlowNavigation } from "./application-flow-navigation";
 
 type JobReviewState = {
   company: string;
@@ -40,6 +42,7 @@ export function JobReviewForm({
 }) {
   const router = useRouter();
   const { showToast } = useToast();
+  const { continueAfterStep } = useApplicationFlowNavigation();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
   const [job, setJob] = useState<JobReviewState>({
@@ -87,14 +90,19 @@ export function JobReviewForm({
 
       const payload = (await response.json()) as { error?: { message?: string } };
       if (!response.ok) {
-        setError(payload.error?.message ?? "We could not save your job changes.");
+        const message = getApiErrorMessage(payload, "We could not save your job changes.");
+        setError(message);
+        showToast(message, "error");
         return;
       }
 
       showToast("Job details saved.");
+      continueAfterStep("extract-review");
       router.refresh();
     } catch {
-      setError("We could not save your job changes.");
+      const message = "We could not save your job changes.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setPending(false);
     }
@@ -166,7 +174,7 @@ export function JobReviewForm({
       </label>
       {error ? <p className="upload-error" role="alert">{error}</p> : null}
       <Button loading={pending} type="submit">
-        Save job details
+        Save job details &amp; continue
       </Button>
     </form>
   );

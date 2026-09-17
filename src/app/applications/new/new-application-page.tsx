@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useId, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { FlowStepper } from "@/components/flow-stepper";
+import { useToast } from "@/components/toast-provider";
+import { getApiErrorMessage } from "@/lib/api/error-message";
 
 const maxFileSize = 10 * 1024 * 1024;
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -12,6 +14,7 @@ const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 export function NewApplicationPage({ userLabel }: { userLabel: string }) {
   const inputId = useId();
   const router = useRouter();
+  const { showToast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string>();
   const [previewUrl, setPreviewUrl] = useState<string>();
@@ -86,13 +89,17 @@ export function NewApplicationPage({ userLabel }: { userLabel: string }) {
       };
 
       if (!response.ok || !payload.data?.application?.id) {
-        setError(payload.error?.message ?? "We could not save this screenshot. Please try again.");
+        const message = getApiErrorMessage(payload, "We could not save this screenshot. Please try again.");
+        setError(message);
+        showToast(message, "error");
         return;
       }
 
       router.push(`/applications/${payload.data.application.id}`);
     } catch {
-      setError("We could not save this screenshot. Please try again.");
+      const message = "We could not save this screenshot. Please try again.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setPending(false);
     }

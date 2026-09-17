@@ -7,6 +7,8 @@ import { AiProcessingBanner } from "@/components/ai-processing-banner";
 import { Button } from "@/components/button";
 import { ErrorRecoveryHint } from "@/components/error-recovery-hint";
 import { useToast } from "@/components/toast-provider";
+import { getApiErrorMessage } from "@/lib/api/error-message";
+import { useApplicationFlowNavigation } from "./application-flow-navigation";
 
 type EmailDraft = {
   id: string;
@@ -28,6 +30,7 @@ export function ApplicationEmailPanel({
 }) {
   const router = useRouter();
   const { showToast } = useToast();
+  const { continueAfterStep } = useApplicationFlowNavigation();
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -45,7 +48,9 @@ export function ApplicationEmailPanel({
       };
 
       if (!response.ok) {
-        setError(payload.error?.message ?? "We could not generate the email draft. Try again.");
+        const message = getApiErrorMessage(payload, "We could not generate the email draft. Try again.");
+        setError(message);
+        showToast(message, "error");
         return;
       }
 
@@ -53,9 +58,12 @@ export function ApplicationEmailPanel({
         setEmail(payload.data.email);
       }
 
+      showToast("Email draft generated. Review and edit it below, then save to continue.");
       router.refresh();
     } catch {
-      setError("We could not generate the email draft. Try again.");
+      const message = "We could not generate the email draft. Try again.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setGenerating(false);
     }
@@ -80,14 +88,19 @@ export function ApplicationEmailPanel({
 
       const payload = (await response.json()) as { error?: { message?: string } };
       if (!response.ok) {
-        setError(payload.error?.message ?? "We could not save your email changes.");
+        const message = getApiErrorMessage(payload, "We could not save your email changes.");
+        setError(message);
+        showToast(message, "error");
         return;
       }
 
       showToast("Email draft saved.");
+      continueAfterStep("email");
       router.refresh();
     } catch {
-      setError("We could not save your email changes.");
+      const message = "We could not save your email changes.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
     }
@@ -133,7 +146,7 @@ export function ApplicationEmailPanel({
       )}
 
       {email ? (
-        <form className="profile-review" onSubmit={handleSave}>
+        <form className="profile-review" key={email.id} onSubmit={handleSave}>
           <label>
             To
             <input readOnly value={email.to} />
@@ -164,7 +177,7 @@ export function ApplicationEmailPanel({
             </>
           ) : null}
           <Button loading={saving} type="submit">
-            Save email draft
+            Save email draft &amp; continue
           </Button>
         </form>
       ) : canGenerate ? (

@@ -7,7 +7,10 @@ import { mimeTypeFromStorageKey, toBase64 } from "./job-media";
 import { getJobForUser, updateJobFromDraft } from "./job.repository";
 import { jobPatchSchema, type JobDraftInput, type JobDraft } from "./job.schemas";
 import { prepareJobDraft } from "./job.service";
-import { markApplicationAnalyzedForJob } from "@/features/applications/application.repository";
+import {
+  markApplicationAnalyzedForJob,
+  recordJobReviewSavedForJob,
+} from "@/features/applications/application.repository";
 import { completeAiRequest, createAiRequest } from "@/features/ai/ai.repository";
 import { downloadPrivateObject } from "@/lib/storage/object-storage";
 
@@ -86,5 +89,7 @@ export async function updateJobForUser(userId: string, jobId: string, patch: Par
   const validatedPatch = jobPatchSchema.parse(patch);
   const merged = { ...jobRecordToDraftInput(job), ...validatedPatch };
   const draft = prepareJobDraft(merged);
-  return updateJobFromDraft(job.id, draft);
+  const updatedJob = await updateJobFromDraft(job.id, draft);
+  await recordJobReviewSavedForJob(userId, jobId);
+  return updatedJob;
 }

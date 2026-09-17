@@ -6,6 +6,7 @@ import { useState } from "react";
 import { AttachmentChip } from "@/components/attachment-chip";
 import { Button } from "@/components/button";
 import { useToast } from "@/components/toast-provider";
+import { getApiErrorMessage } from "@/lib/api/error-message";
 import { mediaUrl } from "@/lib/media/urls";
 
 type DuplicateApplication = {
@@ -77,7 +78,9 @@ export function ApplicationSendPanel({
       };
 
       if (!response.ok) {
-        setError(payload.error?.message ?? "Gmail could not send this email. Your draft is still saved.");
+        const message = getApiErrorMessage(payload, "Gmail could not send this email. Your draft is still saved.");
+        setError(message);
+        showToast(message, "error");
         return;
       }
 
@@ -85,7 +88,9 @@ export function ApplicationSendPanel({
       showToast("Application email sent.");
       router.refresh();
     } catch {
-      setError("Gmail could not send this email. Your draft is still saved.");
+      const message = "Gmail could not send this email. Your draft is still saved.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setPending(false);
     }

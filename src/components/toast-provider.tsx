@@ -1,39 +1,50 @@
-// Purpose: lightweight app-wide toast notifications for save and success feedback.
+// Purpose: lightweight app-wide toast notifications for success and API error feedback.
 // Constraints: client-only UI state; no secrets or API calls.
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 
+export type ToastVariant = "success" | "error";
+
+type ToastState = {
+  message: string;
+  variant: ToastVariant;
+};
+
 type ToastContextValue = {
-  showToast: (message: string) => void;
+  showToast: (message: string, variant?: ToastVariant) => void;
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [message, setMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
 
-  const showToast = useCallback((nextMessage: string) => {
-    setMessage(nextMessage);
+  const showToast = useCallback((nextMessage: string, variant: ToastVariant = "success") => {
+    setToast({ message: nextMessage, variant });
   }, []);
 
   useEffect(() => {
-    if (!message) return;
+    if (!toast) return;
 
-    const timer = window.setTimeout(() => setMessage(null), 4000);
+    const timer = window.setTimeout(() => setToast(null), variantDurationMs(toast.variant));
     return () => window.clearTimeout(timer);
-  }, [message]);
+  }, [toast]);
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      {message ? (
-        <div aria-live="polite" className="toast-viewport" role="status">
-          <div className="toast">{message}</div>
+      {toast ? (
+        <div aria-live={toast.variant === "error" ? "assertive" : "polite"} className="toast-viewport" role="status">
+          <div className={`toast toast-${toast.variant}`}>{toast.message}</div>
         </div>
       ) : null}
     </ToastContext.Provider>
   );
+}
+
+function variantDurationMs(variant: ToastVariant) {
+  return variant === "error" ? 6000 : 4000;
 }
 
 export function useToast() {
