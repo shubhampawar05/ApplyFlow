@@ -1,4 +1,4 @@
-import type { Job } from "@prisma/client";
+import type { Job } from "@/generated/prisma";
 import { describe, expect, it } from "vitest";
 import { jobDraftToUpdateData, jobRecordToDraftInput } from "@/features/jobs/job.mapper";
 import { prepareJobDraft } from "@/features/jobs/job.service";

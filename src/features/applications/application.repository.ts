@@ -1,6 +1,6 @@
 // Purpose: Prisma persistence for applications, match results, and generated emails.
 // Constraints: user-scoped queries only; no provider SDK calls or HTTP handling.
-import type { ApplicationStatus, Prisma } from "@prisma/client";
+import type { ApplicationStatus, Prisma } from "@/generated/prisma";
 import type { EmailPatch } from "@/features/ai/email-generation.schema";
 import type { ResumeMatchingOutput } from "@/features/ai/resume-matching.schema";
 import { prisma } from "@/lib/prisma";

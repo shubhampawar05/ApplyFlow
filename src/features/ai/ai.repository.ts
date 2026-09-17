@@ -1,6 +1,6 @@
 // Purpose: persist AI request lifecycle records for auditing and idempotency.
 // Constraints: Prisma access only; no provider SDK calls or prompt logic.
-import { AIRequestKind, AIRequestStatus, Prisma } from "@prisma/client";
+import { AIRequestKind, AIRequestStatus, Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 
 export async function createAiRequest(input: {

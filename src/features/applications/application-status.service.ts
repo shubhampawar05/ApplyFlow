@@ -1,6 +1,6 @@
 // Purpose: validate and apply user-driven post-send application status changes.
 // Constraints: only post-send transitions; record ApplicationEvent; user-scoped access only.
-import { ApplicationStatus } from "@prisma/client";
+import { ApplicationStatus } from "@/generated/prisma";
 import { applicationStatusPatchSchema, postSendStatuses } from "./application.schemas";
 import { getApplicationForUser, updateApplicationStatus } from "./application.repository";
 
