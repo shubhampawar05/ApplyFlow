@@ -1,10 +1,14 @@
 "use client";
 
-// Purpose: show only the current application step content while the stepper tracks done/current/upcoming.
-// Constraints: no client-side step switching; completed step panels stay hidden; state comes from the server.
-import { ReactNode } from "react";
+// Purpose: step-by-step application layout with sticky stepper and navigation across completed steps.
+// Constraints: upcoming steps stay locked; server still owns step completion state.
+import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import type { ApplicationFlowNextAction, FlowStep, FlowStepId } from "@/features/applications/application-flow-state";
 import { FlowStepper } from "@/components/flow-stepper";
+import {
+  ApplicationFlowNavigationContext,
+  getNextFlowStepId,
+} from "./application-flow-navigation";
 
 type ApplicationFlowShellProps = {
   steps: FlowStep[];
@@ -13,15 +17,57 @@ type ApplicationFlowShellProps = {
   tracking?: ReactNode;
 };
 
-function getCurrentStepId(steps: FlowStep[]): FlowStepId {
+function getCurrentStepId(steps: FlowStep[]) {
   return steps.find((step) => step.status === "current")?.id ?? steps[steps.length - 1]?.id ?? "screenshot";
 }
 
+function canViewStep(steps: FlowStep[], stepId: FlowStepId) {
+  const step = steps.find((item) => item.id === stepId);
+  return step?.status === "complete" || step?.status === "current";
+}
+
+function buildStepStateKey(steps: FlowStep[]) {
+  return steps.map((step) => `${step.id}:${step.status}`).join("|");
+}
+
 export function ApplicationFlowShell({ steps, nextAction, panels, tracking }: ApplicationFlowShellProps) {
-  const currentStepId = getCurrentStepId(steps);
-  const currentStep = steps.find((step) => step.id === currentStepId);
-  const currentPanel = panels[currentStepId];
-  const currentStepNumber = steps.findIndex((step) => step.id === currentStepId) + 1;
+  const serverCurrentStepId = getCurrentStepId(steps);
+  const stepStateKey = useMemo(() => buildStepStateKey(steps), [steps]);
+  const [viewingStepId, setViewingStepId] = useState<FlowStepId>(serverCurrentStepId);
+
+  useEffect(() => {
+    setViewingStepId(serverCurrentStepId);
+  }, [serverCurrentStepId, stepStateKey]);
+
+  const goToStep = useCallback(
+    (stepId: FlowStepId) => {
+      if (!canViewStep(steps, stepId)) {
+        return;
+      }
+
+      setViewingStepId(stepId);
+    },
+    [steps],
+  );
+
+  const continueAfterStep = useCallback(
+    (completedStepId: FlowStepId) => {
+      const nextStepId = getNextFlowStepId(completedStepId);
+      if (nextStepId) {
+        setViewingStepId(nextStepId);
+        return;
+      }
+
+      setViewingStepId(getCurrentStepId(steps));
+    },
+    [steps],
+  );
+
+  const viewingStep = steps.find((step) => step.id === viewingStepId);
+  const viewingPanel = panels[viewingStepId];
+  const viewingStepNumber = steps.findIndex((step) => step.id === viewingStepId) + 1;
+  const isViewingCurrentStep = viewingStepId === serverCurrentStepId;
+  const isBrowsingCompletedStep = Boolean(viewingStep?.status === "complete" && !isViewingCurrentStep);
 
   const stepperItems = steps.map((step) => ({
     id: step.id,
@@ -29,39 +75,61 @@ export function ApplicationFlowShell({ steps, nextAction, panels, tracking }: Ap
     status: step.status,
   }));
 
+  const navigation = useMemo(
+    () => ({
+      goToStep,
+      continueAfterStep,
+    }),
+    [goToStep, continueAfterStep],
+  );
+
   return (
-    <div className="application-flow">
-      <div className="application-flow-header">
-        <FlowStepper steps={stepperItems} />
+    <ApplicationFlowNavigationContext.Provider value={navigation}>
+      <div className="application-flow">
+        <div className="application-flow-header">
+          <FlowStepper activeStepId={viewingStepId} onStepSelect={goToStep} steps={stepperItems} />
 
-        {nextAction && currentStep?.status === "current" ? (
-          <div className="next-action-callout">
-            <p>
-              <strong>Next:</strong> {nextAction.message}
-            </p>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="application-flow-panel">
-        <div className="application-flow-panel-head">
-          <p className="application-flow-step-count">
-            Step {currentStepNumber} of {steps.length}
-          </p>
-          <h2 className="application-flow-step-title">{currentStep?.label}</h2>
-        </div>
-
-        <div className="application-flow-panel-body">
-          {currentPanel ?? (
-            <div className="empty-card">
-              <h2>Finish the previous step first.</h2>
-              <p>This stage unlocks once the earlier steps in the flow are complete.</p>
+          {isBrowsingCompletedStep ? (
+            <div className="flow-viewing-note">
+              <p>
+                You are reviewing a completed step. Changes here still save, but your current step is{" "}
+                {steps.find((step) => step.id === serverCurrentStepId)?.label ?? "ahead"}.
+              </p>
+              <button className="next-action-link" onClick={() => goToStep(serverCurrentStepId)} type="button">
+                Return to current step
+              </button>
             </div>
-          )}
-        </div>
-      </div>
+          ) : null}
 
-      {tracking ? <div className="application-flow-tracking">{tracking}</div> : null}
-    </div>
+          {nextAction && isViewingCurrentStep && viewingStep?.status === "current" ? (
+            <div className="next-action-callout">
+              <p>
+                <strong>Next:</strong> {nextAction.message}
+              </p>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="application-flow-panel">
+          <div className="application-flow-panel-head">
+            <p className="application-flow-step-count">
+              Step {viewingStepNumber} of {steps.length}
+            </p>
+            <h2 className="application-flow-step-title">{viewingStep?.label}</h2>
+          </div>
+
+          <div className="application-flow-panel-body">
+            {viewingPanel ?? (
+              <div className="empty-card">
+                <h2>Finish the previous step first.</h2>
+                <p>This stage unlocks once the earlier steps in the flow are complete.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {tracking ? <div className="application-flow-tracking">{tracking}</div> : null}
+      </div>
+    </ApplicationFlowNavigationContext.Provider>
   );
 }

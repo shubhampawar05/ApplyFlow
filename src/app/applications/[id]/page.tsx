@@ -4,7 +4,11 @@ import {
   findLikelyDuplicateApplicationsForUser,
   shouldBlockApplicationForDuplicates,
 } from "@/features/applications/application-duplicate.service";
-import { getApplicationFlowState, isMatchStepComplete } from "@/features/applications/application-flow-state";
+import {
+  getApplicationFlowState,
+  isJobReviewStepComplete,
+  isMatchStepComplete,
+} from "@/features/applications/application-flow-state";
 import { parseStoredMatchDetails } from "@/features/applications/application-match.service";
 import { getApplicationDetailForUser } from "@/features/applications/application.repository";
 import { getDefaultResumeWithProfile } from "@/features/resume/resume.repository";
@@ -60,6 +64,11 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const initialMatch = parseStoredMatchDetails(latestMatchEvent?.metadata);
   const matchStepComplete = isMatchStepComplete(application.events);
   const selectedEmail = application.emails.find((email) => email.isSelected) ?? application.emails[0] ?? null;
+  const jobReviewComplete = isJobReviewStepComplete({
+    events: application.events,
+    hasEmailDraft: Boolean(selectedEmail),
+    status: application.status,
+  });
   const gmailStatus = await getGmailConnectionStatus(user.id);
   const duplicateApplications = await findLikelyDuplicateApplicationsForUser(user.id, application.id);
   const isBlockedByDuplicate = shouldBlockApplicationForDuplicates({
@@ -74,6 +83,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const flow = getApplicationFlowState({
     hasScreenshot: Boolean(job.screenshotStorageKey),
     extracted,
+    jobReviewComplete,
     hasMatch: matchStepComplete,
     hasEmailDraft: Boolean(selectedEmail),
     status: application.status,
@@ -139,17 +149,39 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const extractReviewPanel = (
     <section className="flow-section" id="section-job-review">
       {isBlockedByDuplicate ? <ApplicationDuplicateBlock duplicates={duplicateSummaries} /> : null}
-      <p className="section-label">Job review</p>
-      {extracted ? (
-        <JobReviewForm jobId={job.id} initialJob={jobReviewFields} />
-      ) : (
+      {job.screenshotStorageKey ? (
+        <ApplicationScreenshotPreview
+          fileName={screenshotLabel(job.screenshotStorageKey)}
+          jobId={job.id}
+        />
+      ) : null}
+      {!extracted ? (
         <div className="empty-card">
           <h2>Extract job details to begin review.</h2>
           <p>
-            Company, title, location, skills, and application contact will appear here after vision-based extraction.
-            Missing fields stay empty instead of being invented.
+            Extraction does not run automatically. Click the button below to read your screenshot with AI, then review
+            and correct anything it finds. Missing fields stay empty instead of being invented.
           </p>
+          <JobExtractButton hasExtractedFields={extracted} jobId={job.id} />
         </div>
+      ) : (
+        <>
+          <div className="resume-card">
+            <p className="resume-card-title">
+              <strong>Review what we extracted.</strong>
+            </p>
+            <p className="quiet-note">
+              Check every field below against your screenshot, fix anything that looks wrong, then save to continue to
+              match analysis.
+            </p>
+            <JobExtractButton hasExtractedFields={extracted} jobId={job.id} />
+          </div>
+          <JobReviewForm
+            jobId={job.id}
+            initialJob={jobReviewFields}
+            key={`${job.id}-${job.updatedAt.toISOString()}`}
+          />
+        </>
       )}
     </section>
   );

@@ -107,6 +107,33 @@ export async function saveApplicationMatchResult(
   });
 }
 
+export async function recordJobReviewSavedForJob(userId: string, jobId: string) {
+  const application = await prisma.application.findFirst({
+    where: { userId, jobId },
+    select: { id: true },
+  });
+
+  if (!application) {
+    return null;
+  }
+
+  const existing = await prisma.applicationEvent.findFirst({
+    where: { applicationId: application.id, type: "JOB_REVIEW_SAVED" },
+    select: { id: true },
+  });
+
+  if (existing) {
+    return existing;
+  }
+
+  return prisma.applicationEvent.create({
+    data: {
+      applicationId: application.id,
+      type: "JOB_REVIEW_SAVED",
+    },
+  });
+}
+
 export async function recordMatchSkipped(applicationId: string) {
   return prisma.applicationEvent.create({
     data: {
@@ -143,7 +170,6 @@ export async function createSelectedGeneratedEmail(input: {
       where: { id: input.applicationId },
       data: {
         resumeId: input.resumeId,
-        status: "READY",
       },
       select: {
         id: true,
@@ -159,7 +185,6 @@ export async function createSelectedGeneratedEmail(input: {
       data: {
         applicationId: input.applicationId,
         type: "EMAIL_GENERATED",
-        toStatus: "READY",
       },
     });
 

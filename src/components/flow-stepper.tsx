@@ -45,7 +45,6 @@ export function FlowStepper({
           "flow-step",
           `flow-step-${step.status}`,
           isActive ? "flow-step-active" : "",
-          step.status === "current" ? "flow-step-active" : "",
           selectable ? "flow-step-selectable" : "",
         ]
           .filter(Boolean)

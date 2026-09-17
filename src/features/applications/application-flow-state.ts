@@ -25,7 +25,7 @@ const FLOW_STEP_DEFINITIONS: Array<{ id: FlowStepId; label: string; sectionId: s
   { id: "send", label: "Send", sectionId: "section-send" },
 ];
 
-function isEmailStepComplete(status: string) {
+export function isEmailReviewStepComplete(status: string) {
   return status === "READY" || status === "SENT";
 }
 
@@ -33,9 +33,26 @@ export function isMatchStepComplete(events: Array<{ type: string }>) {
   return events.some((event) => event.type === "MATCH_COMPLETED" || event.type === "MATCH_SKIPPED");
 }
 
+export function isJobReviewStepComplete(input: {
+  events: Array<{ type: string }>;
+  hasEmailDraft: boolean;
+  status: string;
+}) {
+  if (input.events.some((event) => event.type === "JOB_REVIEW_SAVED")) {
+    return true;
+  }
+
+  if (isMatchStepComplete(input.events)) {
+    return true;
+  }
+
+  return input.hasEmailDraft || input.status === "READY" || input.status === "SENT";
+}
+
 export function getApplicationFlowState(input: {
   hasScreenshot: boolean;
   extracted: boolean;
+  jobReviewComplete: boolean;
   hasMatch: boolean;
   hasEmailDraft: boolean;
   status: string;
@@ -43,15 +60,15 @@ export function getApplicationFlowState(input: {
 }) {
   const completions = [
     input.hasScreenshot,
-    input.extracted,
+    input.jobReviewComplete,
     input.hasMatch,
-    isEmailStepComplete(input.status),
+    isEmailReviewStepComplete(input.status),
     input.status === "SENT",
   ];
 
   const firstIncompleteIndex = completions.findIndex((complete) => !complete);
   let currentIndex = firstIncompleteIndex === -1 ? completions.length - 1 : firstIncompleteIndex;
-  if (input.blockedByDuplicate && input.extracted) {
+  if (input.blockedByDuplicate && input.extracted && !input.jobReviewComplete) {
     currentIndex = 1;
   }
 

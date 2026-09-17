@@ -12,6 +12,8 @@ function formatEventLabel(event: TimelineEvent) {
       return "Application created";
     case "STATUS_CHANGED":
       return `Status changed to ${event.toStatus?.replaceAll("_", " ") ?? "updated"}`;
+    case "JOB_REVIEW_SAVED":
+      return "Job details reviewed and saved";
     case "MATCH_COMPLETED":
       return "Resume match completed";
     case "MATCH_SKIPPED":
@@ -31,6 +33,8 @@ function timelineIcon(eventType: string) {
       return "+";
     case "STATUS_CHANGED":
       return "↻";
+    case "JOB_REVIEW_SAVED":
+      return "✓";
     case "MATCH_COMPLETED":
       return "◎";
     case "MATCH_SKIPPED":

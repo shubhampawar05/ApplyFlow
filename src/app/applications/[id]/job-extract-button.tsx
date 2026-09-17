@@ -5,9 +5,12 @@ import { useState } from "react";
 import { AiProcessingBanner } from "@/components/ai-processing-banner";
 import { Button } from "@/components/button";
 import { ErrorRecoveryHint } from "@/components/error-recovery-hint";
+import { useToast } from "@/components/toast-provider";
+import { getApiErrorMessage } from "@/lib/api/error-message";
 
 export function JobExtractButton({ jobId, hasExtractedFields }: { jobId: string; hasExtractedFields: boolean }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -20,13 +23,18 @@ export function JobExtractButton({ jobId, hasExtractedFields }: { jobId: string;
       const payload = (await response.json()) as { error?: { message?: string } };
 
       if (!response.ok) {
-        setError(payload.error?.message ?? "We could not extract job details. Try again.");
+        const message = getApiErrorMessage(payload, "We could not extract job details. Try again.");
+        setError(message);
+        showToast(message, "error");
         return;
       }
 
+      showToast("Job details extracted.");
       router.refresh();
     } catch {
-      setError("We could not extract job details. Try again.");
+      const message = "We could not extract job details. Try again.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setPending(false);
     }

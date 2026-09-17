@@ -6,6 +6,9 @@ import { useState } from "react";
 import { AiProcessingBanner } from "@/components/ai-processing-banner";
 import { Button } from "@/components/button";
 import { ErrorRecoveryHint } from "@/components/error-recovery-hint";
+import { useToast } from "@/components/toast-provider";
+import { getApiErrorMessage } from "@/lib/api/error-message";
+import { useApplicationFlowNavigation } from "./application-flow-navigation";
 
 type MatchDetails = {
   score: number;
@@ -28,6 +31,8 @@ export function ApplicationMatchPanel({
   blockReason?: string;
 }) {
   const router = useRouter();
+  const { showToast } = useToast();
+  const { continueAfterStep } = useApplicationFlowNavigation();
   const [pending, setPending] = useState(false);
   const [skipping, setSkipping] = useState(false);
   const [error, setError] = useState<string>();
@@ -45,7 +50,9 @@ export function ApplicationMatchPanel({
       };
 
       if (!response.ok) {
-        setError(payload.error?.message ?? "We could not analyze the resume match. Try again.");
+        const message = getApiErrorMessage(payload, "We could not analyze the resume match. Try again.");
+        setError(message);
+        showToast(message, "error");
         return;
       }
 
@@ -53,9 +60,12 @@ export function ApplicationMatchPanel({
         setMatch(payload.data.match);
       }
 
+      showToast("Resume match analysis complete.");
       router.refresh();
     } catch {
-      setError("We could not analyze the resume match. Try again.");
+      const message = "We could not analyze the resume match. Try again.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setPending(false);
     }
@@ -70,13 +80,19 @@ export function ApplicationMatchPanel({
       const payload = (await response.json()) as { error?: { message?: string } };
 
       if (!response.ok) {
-        setError(payload.error?.message ?? "We could not skip this step. Please try again.");
+        const message = getApiErrorMessage(payload, "We could not skip this step. Please try again.");
+        setError(message);
+        showToast(message, "error");
         return;
       }
 
+      showToast("Match step skipped.");
+      continueAfterStep("match");
       router.refresh();
     } catch {
-      setError("We could not skip this step. Please try again.");
+      const message = "We could not skip this step. Please try again.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setSkipping(false);
     }
@@ -188,6 +204,12 @@ export function ApplicationMatchPanel({
               </p>
             </div>
           ) : null}
+
+          <div className="panel-actions">
+            <Button onClick={() => continueAfterStep("match")} type="button">
+              Continue to email
+            </Button>
+          </div>
         </div>
       ) : canMatch ? (
         <div className="empty-card">
