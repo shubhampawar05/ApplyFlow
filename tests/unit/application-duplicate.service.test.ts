@@ -1,11 +1,36 @@
 import { describe, expect, it, vi } from "vitest";
-import { findLikelyDuplicateApplicationsForUser } from "@/features/applications/application-duplicate.service";
+import {
+  findLikelyDuplicateApplicationsForUser,
+  shouldBlockApplicationForDuplicates,
+} from "@/features/applications/application-duplicate.service";
 
 vi.mock("@/features/applications/application.repository", () => ({
   listApplicationsForDuplicateCheck: vi.fn(),
 }));
 
 import { listApplicationsForDuplicateCheck } from "@/features/applications/application.repository";
+
+describe("shouldBlockApplicationForDuplicates", () => {
+  it("blocks when a duplicate is detectable and the application is not sent", () => {
+    expect(
+      shouldBlockApplicationForDuplicates({
+        status: "ANALYZED",
+        job: { company: "Acme Inc", title: "Backend Engineer" },
+        duplicates: [{ id: "app-1", status: "SENT", updatedAt: new Date(), job: { company: "Acme", title: "Backend Engineer", applicationEmail: null } }],
+      }),
+    ).toBe(true);
+  });
+
+  it("does not block sent applications", () => {
+    expect(
+      shouldBlockApplicationForDuplicates({
+        status: "SENT",
+        job: { company: "Acme Inc", title: "Backend Engineer" },
+        duplicates: [{ id: "app-1", status: "SENT", updatedAt: new Date(), job: { company: "Acme", title: "Backend Engineer", applicationEmail: null } }],
+      }),
+    ).toBe(false);
+  });
+});
 
 describe("findLikelyDuplicateApplicationsForUser", () => {
   it("returns matching applications based on normalized identity", async () => {

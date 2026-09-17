@@ -7,7 +7,14 @@ import { completeAiRequest, createAiRequest } from "@/features/ai/ai.repository"
 import { getDefaultResumeWithProfile } from "@/features/resume/resume.repository";
 import { toJobMatchInput, toResumeMatchInput } from "./application-match.mapper";
 import {
+  ApplicationDuplicateError,
+  assertApplicationNotDuplicateBlocked,
+} from "./application-duplicate.service";
+import { isMatchStepComplete } from "./application-flow-state";
+import {
+  getApplicationDetailForUser,
   getApplicationMatchContext,
+  recordMatchSkipped,
   saveApplicationMatchResult,
 } from "./application.repository";
 
@@ -31,7 +38,42 @@ function isJobReadyForMatch(job: { company: string | null; title: string | null;
   return Boolean(job.company || job.title) && Boolean(job.skills.length > 0 || job.description);
 }
 
+function rethrowDuplicateBlocked(error: unknown) {
+  if (error instanceof ApplicationDuplicateError) {
+    throw new ApplicationMatchError("DUPLICATE_BLOCKED", error.message);
+  }
+}
+
+export async function skipApplicationMatchForUser(userId: string, applicationId: string) {
+  try {
+    await assertApplicationNotDuplicateBlocked(userId, applicationId);
+  } catch (error) {
+    rethrowDuplicateBlocked(error);
+    throw error;
+  }
+
+  const application = await getApplicationDetailForUser(userId, applicationId);
+  if (!application) {
+    throw new ApplicationMatchError("NOT_FOUND", "Application not found.");
+  }
+
+  if (isMatchStepComplete(application.events)) {
+    throw new ApplicationMatchError("ALREADY_COMPLETE", "Resume match is already complete or skipped.");
+  }
+
+  await recordMatchSkipped(applicationId);
+
+  return { applicationId };
+}
+
 export async function matchApplicationForUser(userId: string, applicationId: string) {
+  try {
+    await assertApplicationNotDuplicateBlocked(userId, applicationId);
+  } catch (error) {
+    rethrowDuplicateBlocked(error);
+    throw error;
+  }
+
   const application = await getApplicationMatchContext(userId, applicationId);
   if (!application) {
     throw new ApplicationMatchError("NOT_FOUND", "Application not found.");

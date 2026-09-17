@@ -29,6 +29,7 @@ export function ApplicationMatchPanel({
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [skipping, setSkipping] = useState(false);
   const [error, setError] = useState<string>();
   const [match, setMatch] = useState<MatchDetails | null>(initialMatch);
 
@@ -60,6 +61,27 @@ export function ApplicationMatchPanel({
     }
   }
 
+  async function handleSkip() {
+    setSkipping(true);
+    setError(undefined);
+
+    try {
+      const response = await fetch(`/api/applications/${applicationId}/match/skip`, { method: "POST" });
+      const payload = (await response.json()) as { error?: { message?: string } };
+
+      if (!response.ok) {
+        setError(payload.error?.message ?? "We could not skip this step. Please try again.");
+        return;
+      }
+
+      router.refresh();
+    } catch {
+      setError("We could not skip this step. Please try again.");
+    } finally {
+      setSkipping(false);
+    }
+  }
+
   return (
     <section className="settings-section" id="section-match">
       <p className="section-label">Resume match</p>
@@ -72,6 +94,13 @@ export function ApplicationMatchPanel({
             <Link className="button secondary" href="/settings">
               Go to Settings
             </Link>
+          ) : null}
+          {!match ? (
+            <div className="panel-actions">
+              <Button loading={skipping} onClick={handleSkip} type="button" variant="secondary">
+                Skip for now
+              </Button>
+            </div>
           ) : null}
         </div>
       ) : (
@@ -89,9 +118,16 @@ export function ApplicationMatchPanel({
             Strengths and gaps are grounded in your parsed resume profile and the reviewed job fields.
           </p>
           {pending ? <AiProcessingBanner message="Comparing your resume profile to this job…" /> : null}
-          <Button loading={pending} onClick={handleMatch} type="button" variant="secondary">
-            {match ? "Re-run match analysis" : "Run match analysis"}
-          </Button>
+          <div className="panel-actions">
+            <Button loading={pending} onClick={handleMatch} type="button" variant="secondary">
+              {match ? "Re-run match analysis" : "Run match analysis"}
+            </Button>
+            {!match ? (
+              <Button loading={skipping} onClick={handleSkip} type="button" variant="secondary">
+                Skip for now
+              </Button>
+            ) : null}
+          </div>
           {error ? (
             <>
               <p className="upload-error" role="alert">

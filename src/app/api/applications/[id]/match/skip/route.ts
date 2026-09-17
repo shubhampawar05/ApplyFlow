@@ -1,8 +1,8 @@
-// Purpose: POST endpoint to analyze resume/job fit for an application.
+// Purpose: POST endpoint to skip resume match analysis and advance the application flow.
 // Constraints: authenticate user; thin handler delegating to application-match.service; follow docs/07-API.md.
 import {
   ApplicationMatchError,
-  matchApplicationForUser,
+  skipApplicationMatchForUser,
 } from "@/features/applications/application-match.service";
 import { getApiCurrentUser } from "@/features/auth/get-api-current-user";
 import { apiError, apiSuccess } from "@/lib/api/responses";
@@ -18,26 +18,16 @@ export async function POST(_request: Request, context: RouteContext) {
   const { id } = await context.params;
 
   try {
-    const result = await matchApplicationForUser(user.id, id);
+    const result = await skipApplicationMatchForUser(user.id, id);
     return apiSuccess(result);
   } catch (error) {
     if (error instanceof ApplicationMatchError) {
       const status =
-        error.code === "NOT_FOUND"
-          ? 404
-          : error.code === "DUPLICATE_BLOCKED"
-            ? 409
-            : error.code === "AI_MATCH_FAILED"
-              ? 500
-              : 400;
+        error.code === "NOT_FOUND" ? 404 : error.code === "DUPLICATE_BLOCKED" ? 409 : 400;
       return apiError(error.code, error.message, status);
     }
 
-    console.error("Application match failed", error);
-    return apiError(
-      "AI_MATCH_FAILED",
-      "We could not analyze the resume match right now. Try again in a moment.",
-      500,
-    );
+    console.error("Application match skip failed", error);
+    return apiError("MATCH_SKIP_FAILED", "We could not skip this step right now. Try again.", 500);
   }
 }

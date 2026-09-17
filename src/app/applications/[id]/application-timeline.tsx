@@ -14,6 +14,8 @@ function formatEventLabel(event: TimelineEvent) {
       return `Status changed to ${event.toStatus?.replaceAll("_", " ") ?? "updated"}`;
     case "MATCH_COMPLETED":
       return "Resume match completed";
+    case "MATCH_SKIPPED":
+      return "Resume match skipped";
     case "EMAIL_GENERATED":
       return "Email draft generated";
     case "EMAIL_SENT":
@@ -31,6 +33,8 @@ function timelineIcon(eventType: string) {
       return "↻";
     case "MATCH_COMPLETED":
       return "◎";
+    case "MATCH_SKIPPED":
+      return "→";
     case "EMAIL_GENERATED":
       return "✎";
     case "EMAIL_SENT":

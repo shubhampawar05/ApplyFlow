@@ -9,6 +9,10 @@ import {
 import { emailPatchSchema } from "@/features/ai/email-generation.schema";
 import { completeAiRequest, createAiRequest } from "@/features/ai/ai.repository";
 import { getDefaultResumeWithProfile } from "@/features/resume/resume.repository";
+import {
+  ApplicationDuplicateError,
+  assertApplicationNotDuplicateBlocked,
+} from "./application-duplicate.service";
 import { parseStoredMatchDetails } from "./application-match.service";
 import { toJobMatchInput, toResumeMatchInput } from "./application-match.mapper";
 import {
@@ -44,6 +48,15 @@ function getLatestMatchAnalysis(events: Array<{ metadata: unknown }>) {
 }
 
 export async function generateApplicationEmailForUser(userId: string, applicationId: string) {
+  try {
+    await assertApplicationNotDuplicateBlocked(userId, applicationId);
+  } catch (error) {
+    if (error instanceof ApplicationDuplicateError) {
+      throw new ApplicationEmailError("DUPLICATE_BLOCKED", error.message);
+    }
+    throw error;
+  }
+
   const application = await getApplicationEmailContext(userId, applicationId);
   if (!application) {
     throw new ApplicationEmailError("NOT_FOUND", "Application not found.");

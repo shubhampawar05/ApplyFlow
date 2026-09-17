@@ -1,7 +1,7 @@
-// Purpose: detect likely duplicate applications before send using normalized job identity.
+// Purpose: detect likely duplicate applications and block costly flow steps early.
 // Constraints: deterministic comparison only; reuse job.service duplicate rules; no Gmail or HTTP logic.
 import { isLikelyDuplicate, normalizeJobIdentity } from "@/features/jobs/job.service";
-import { listApplicationsForDuplicateCheck } from "./application.repository";
+import { getApplicationForUser, listApplicationsForDuplicateCheck } from "./application.repository";
 
 export type DuplicateApplicationSummary = {
   id: string;
@@ -13,6 +13,58 @@ export type DuplicateApplicationSummary = {
     applicationEmail: string | null;
   };
 };
+
+export class ApplicationDuplicateError extends Error {
+  readonly code = "DUPLICATE_BLOCKED";
+  readonly duplicates: DuplicateApplicationSummary[];
+
+  constructor(message: string, duplicates: DuplicateApplicationSummary[]) {
+    super(message);
+    this.name = "ApplicationDuplicateError";
+    this.duplicates = duplicates;
+  }
+}
+
+export function isDuplicateDetectionReady(job: { company: string | null; title: string | null }) {
+  return Boolean(job.company && job.title);
+}
+
+export function shouldBlockApplicationForDuplicates(input: {
+  status: string;
+  job: { company: string | null; title: string | null };
+  duplicates: DuplicateApplicationSummary[];
+}) {
+  return (
+    input.status !== "SENT" &&
+    isDuplicateDetectionReady(input.job) &&
+    input.duplicates.length > 0
+  );
+}
+
+export async function assertApplicationNotDuplicateBlocked(userId: string, applicationId: string) {
+  const application = await getApplicationForUser(userId, applicationId);
+  if (!application) {
+    throw new ApplicationDuplicateError("Application not found.", []);
+  }
+
+  if (application.status === "SENT") {
+    return;
+  }
+
+  if (!isDuplicateDetectionReady(application.job)) {
+    return;
+  }
+
+  const duplicates = await findLikelyDuplicateApplicationsForUser(userId, applicationId);
+  if (duplicates.length === 0) {
+    return;
+  }
+
+  throw new ApplicationDuplicateError(
+    "This application matches a role you already saved or sent. Edit the job details or open the existing application instead.",
+    duplicates,
+  );
+}
 
 export async function findLikelyDuplicateApplicationsForUser(userId: string, applicationId: string) {
   const applications = await listApplicationsForDuplicateCheck(userId, applicationId);

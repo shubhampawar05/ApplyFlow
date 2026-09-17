@@ -1,16 +1,19 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
-import { findLikelyDuplicateApplicationsForUser } from "@/features/applications/application-duplicate.service";
-import { getApplicationFlowState } from "@/features/applications/application-flow-state";
+import {
+  findLikelyDuplicateApplicationsForUser,
+  shouldBlockApplicationForDuplicates,
+} from "@/features/applications/application-duplicate.service";
+import { getApplicationFlowState, isMatchStepComplete } from "@/features/applications/application-flow-state";
 import { parseStoredMatchDetails } from "@/features/applications/application-match.service";
 import { getApplicationDetailForUser } from "@/features/applications/application.repository";
 import { getDefaultResumeWithProfile } from "@/features/resume/resume.repository";
 import { requireCurrentUser } from "@/features/auth/require-current-user";
 import { getGmailConnectionStatus } from "@/features/integrations/gmail/gmail.service";
+import { ApplicationDuplicateBlock } from "./application-duplicate-block";
 import { ApplicationEmailPanel } from "./application-email-panel";
-import { ApplicationFlowStepper } from "./application-flow-stepper";
+import { ApplicationFlowShell } from "./application-flow-shell";
 import { ApplicationMatchPanel } from "./application-match-panel";
-import { ApplicationNextAction } from "./application-next-action";
 import { ApplicationSendPanel } from "./application-send-panel";
 import { ApplicationStatusPanel } from "./application-status-panel";
 import { ApplicationTimeline } from "./application-timeline";
@@ -55,15 +58,26 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const hasRecipientEmail = isValidEmail(job.applicationEmail);
   const latestMatchEvent = application.events.find((event) => event.type === "MATCH_COMPLETED");
   const initialMatch = parseStoredMatchDetails(latestMatchEvent?.metadata);
+  const matchStepComplete = isMatchStepComplete(application.events);
   const selectedEmail = application.emails.find((email) => email.isSelected) ?? application.emails[0] ?? null;
   const gmailStatus = await getGmailConnectionStatus(user.id);
   const duplicateApplications = await findLikelyDuplicateApplicationsForUser(user.id, application.id);
+  const isBlockedByDuplicate = shouldBlockApplicationForDuplicates({
+    status: application.status,
+    job,
+    duplicates: duplicateApplications,
+  });
+  const duplicateSummaries = duplicateApplications.map((duplicate) => ({
+    ...duplicate,
+    updatedAt: duplicate.updatedAt.toISOString(),
+  }));
   const flow = getApplicationFlowState({
     hasScreenshot: Boolean(job.screenshotStorageKey),
     extracted,
-    hasMatch: Boolean(latestMatchEvent),
+    hasMatch: matchStepComplete,
     hasEmailDraft: Boolean(selectedEmail),
     status: application.status,
+    blockedByDuplicate: isBlockedByDuplicate,
   });
 
   let matchBlockReason = "Extract and review the job details before running a match.";
@@ -89,114 +103,131 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
     sendBlockReason = "This application needs a selected resume before sending.";
   }
 
+  const jobReviewFields = {
+    company: job.company,
+    title: job.title,
+    location: job.location,
+    employmentType: job.employmentType,
+    experience: job.experience,
+    applicationEmail: job.applicationEmail,
+    applicationUrl: job.applicationUrl,
+    salary: job.salary,
+    source: job.source,
+    skills: job.skills,
+    description: job.description,
+  };
+
+  const screenshotPanel = (
+    <section className="flow-section" id="section-screenshot">
+      <p className="section-label">Screenshot intake</p>
+      <div className="resume-card" role="status">
+        <p className="resume-card-title">
+          Saved screenshot: <strong>{screenshotLabel(job.screenshotStorageKey)}</strong>
+        </p>
+        <p className="quiet-note">Uploaded {application.createdAt.toLocaleString()}</p>
+        {job.screenshotStorageKey ? (
+          <ApplicationScreenshotPreview
+            fileName={screenshotLabel(job.screenshotStorageKey)}
+            jobId={job.id}
+          />
+        ) : null}
+        <JobExtractButton hasExtractedFields={extracted} jobId={job.id} />
+      </div>
+    </section>
+  );
+
+  const extractReviewPanel = (
+    <section className="flow-section" id="section-job-review">
+      {isBlockedByDuplicate ? <ApplicationDuplicateBlock duplicates={duplicateSummaries} /> : null}
+      <p className="section-label">Job review</p>
+      {extracted ? (
+        <JobReviewForm jobId={job.id} initialJob={jobReviewFields} />
+      ) : (
+        <div className="empty-card">
+          <h2>Extract job details to begin review.</h2>
+          <p>
+            Company, title, location, skills, and application contact will appear here after vision-based extraction.
+            Missing fields stay empty instead of being invented.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+
+  const matchPanel = extracted && !isBlockedByDuplicate ? (
+    <ApplicationMatchPanel
+      applicationId={application.id}
+      blockReason={matchBlockReason}
+      canMatch={jobReadyForMatch && hasResumeProfile}
+      initialMatch={initialMatch}
+    />
+  ) : null;
+
+  const emailPanel = extracted && !isBlockedByDuplicate ? (
+    <ApplicationEmailPanel
+      applicationId={application.id}
+      blockReason={emailBlockReason}
+      canGenerate={hasResumeProfile && hasRecipientEmail}
+      initialEmail={
+        selectedEmail
+          ? {
+              id: selectedEmail.id,
+              to: selectedEmail.to,
+              subject: selectedEmail.subject,
+              body: selectedEmail.body,
+            }
+          : null
+      }
+    />
+  ) : null;
+
+  const sendPanel =
+    extracted && selectedEmail && !isBlockedByDuplicate ? (
+      <ApplicationSendPanel
+        applicationId={application.id}
+        applicationStatus={application.status}
+        blockReason={sendBlockReason}
+        canSend={
+          gmailStatus.connected &&
+          Boolean(application.resumeId) &&
+          application.status === "READY"
+        }
+        duplicateApplications={duplicateSummaries}
+        gmailConnected={gmailStatus.connected}
+        resumeFileName={defaultResume?.fileName ?? null}
+        resumeId={defaultResume?.id ?? null}
+      />
+    ) : null;
+
+  const trackingPanel =
+    application.status === "SENT" ? (
+      <>
+        <ApplicationStatusPanel applicationId={application.id} currentStatus={application.status} />
+        <ApplicationTimeline events={application.events} />
+      </>
+    ) : null;
+
   return (
     <AppShell activePath="" userLabel={user.displayName ?? user.email}>
       <p className="eyebrow">Application</p>
       <h1>{job.title ?? "Review the job posting"}</h1>
       <p className="lede">
-        Status: <strong>{application.status.replaceAll("_", " ")}</strong>. Follow the steps below from screenshot to
-        send — each stage stays editable before you approve anything.
+        Status: <strong>{application.status.replaceAll("_", " ")}</strong>. Completed steps stay in the progress bar
+        above — only your current step is shown below.
       </p>
 
-      <ApplicationFlowStepper steps={flow.steps} />
-      {flow.nextAction ? <ApplicationNextAction action={flow.nextAction} /> : null}
-
-      <section className="settings-section" id="section-screenshot">
-        <p className="section-label">Screenshot intake</p>
-        <div className="resume-card" role="status">
-          <p className="resume-card-title">
-            Saved screenshot: <strong>{screenshotLabel(job.screenshotStorageKey)}</strong>
-          </p>
-          <p className="quiet-note">Uploaded {application.createdAt.toLocaleString()}</p>
-          {job.screenshotStorageKey ? (
-            <ApplicationScreenshotPreview
-              fileName={screenshotLabel(job.screenshotStorageKey)}
-              jobId={job.id}
-            />
-          ) : null}
-          <JobExtractButton hasExtractedFields={extracted} jobId={job.id} />
-        </div>
-      </section>
-
-      <section className="settings-section" id="section-job-review">
-        <p className="section-label">Job review</p>
-        {extracted ? (
-          <JobReviewForm
-            jobId={job.id}
-            initialJob={{
-              company: job.company,
-              title: job.title,
-              location: job.location,
-              employmentType: job.employmentType,
-              experience: job.experience,
-              applicationEmail: job.applicationEmail,
-              applicationUrl: job.applicationUrl,
-              salary: job.salary,
-              source: job.source,
-              skills: job.skills,
-              description: job.description,
-            }}
-          />
-        ) : (
-          <div className="empty-card">
-            <h2>Extract job details to begin review.</h2>
-            <p>
-              Company, title, location, skills, and application contact will appear here after vision-based extraction.
-              Missing fields stay empty instead of being invented.
-            </p>
-          </div>
-        )}
-      </section>
-
-      {extracted ? (
-        <ApplicationMatchPanel
-          applicationId={application.id}
-          blockReason={matchBlockReason}
-          canMatch={jobReadyForMatch && hasResumeProfile}
-          initialMatch={initialMatch}
-        />
-      ) : null}
-
-      {extracted ? (
-        <ApplicationEmailPanel
-          applicationId={application.id}
-          blockReason={emailBlockReason}
-          canGenerate={hasResumeProfile && hasRecipientEmail}
-          initialEmail={
-            selectedEmail
-              ? {
-                  id: selectedEmail.id,
-                  to: selectedEmail.to,
-                  subject: selectedEmail.subject,
-                  body: selectedEmail.body,
-                }
-              : null
-          }
-        />
-      ) : null}
-
-      {extracted && selectedEmail ? (
-        <ApplicationSendPanel
-          applicationId={application.id}
-          applicationStatus={application.status}
-          blockReason={sendBlockReason}
-          canSend={
-            gmailStatus.connected &&
-            Boolean(application.resumeId) &&
-            application.status === "READY"
-          }
-          duplicateApplications={duplicateApplications.map((duplicate) => ({
-            ...duplicate,
-            updatedAt: duplicate.updatedAt.toISOString(),
-          }))}
-          gmailConnected={gmailStatus.connected}
-          resumeFileName={defaultResume?.fileName ?? null}
-          resumeId={defaultResume?.id ?? null}
-        />
-      ) : null}
-
-      <ApplicationStatusPanel applicationId={application.id} currentStatus={application.status} />
-      <ApplicationTimeline events={application.events} />
+      <ApplicationFlowShell
+        nextAction={flow.nextAction}
+        panels={{
+          screenshot: screenshotPanel,
+          "extract-review": extractReviewPanel,
+          match: matchPanel,
+          email: emailPanel,
+          send: sendPanel,
+        }}
+        steps={flow.steps}
+        tracking={trackingPanel}
+      />
     </AppShell>
   );
 }

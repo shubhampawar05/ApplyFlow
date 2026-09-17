@@ -29,12 +29,17 @@ function isEmailStepComplete(status: string) {
   return status === "READY" || status === "SENT";
 }
 
+export function isMatchStepComplete(events: Array<{ type: string }>) {
+  return events.some((event) => event.type === "MATCH_COMPLETED" || event.type === "MATCH_SKIPPED");
+}
+
 export function getApplicationFlowState(input: {
   hasScreenshot: boolean;
   extracted: boolean;
   hasMatch: boolean;
   hasEmailDraft: boolean;
   status: string;
+  blockedByDuplicate?: boolean;
 }) {
   const completions = [
     input.hasScreenshot,
@@ -45,11 +50,16 @@ export function getApplicationFlowState(input: {
   ];
 
   const firstIncompleteIndex = completions.findIndex((complete) => !complete);
-  const currentIndex = firstIncompleteIndex === -1 ? completions.length - 1 : firstIncompleteIndex;
+  let currentIndex = firstIncompleteIndex === -1 ? completions.length - 1 : firstIncompleteIndex;
+  if (input.blockedByDuplicate && input.extracted) {
+    currentIndex = 1;
+  }
 
   const steps: FlowStep[] = FLOW_STEP_DEFINITIONS.map((definition, index) => {
     let status: FlowStepStatus = "upcoming";
-    if (completions[index]) {
+    if (input.blockedByDuplicate && index === 1) {
+      status = "current";
+    } else if (completions[index]) {
       status = "complete";
     } else if (index === currentIndex) {
       status = "current";
@@ -64,6 +74,7 @@ export function getApplicationFlowState(input: {
     hasMatch: input.hasMatch,
     hasEmailDraft: input.hasEmailDraft,
     status: input.status,
+    blockedByDuplicate: input.blockedByDuplicate,
   });
 
   return { steps, nextAction };
@@ -75,6 +86,7 @@ function getNextAction(input: {
   hasMatch: boolean;
   hasEmailDraft: boolean;
   status: string;
+  blockedByDuplicate?: boolean;
 }): ApplicationFlowNextAction | null {
   if (input.status === "SENT") {
     return null;
@@ -87,6 +99,13 @@ function getNextAction(input: {
         sectionId: "section-screenshot",
       };
     case "extract-review":
+      if (input.blockedByDuplicate) {
+        return {
+          message:
+            "This role matches an existing application. Update the job details or open the existing application.",
+          sectionId: "section-duplicate-block",
+        };
+      }
       return {
         message: input.extracted
           ? "Review the extracted job details and save any corrections."
