@@ -107,6 +107,15 @@ export async function saveApplicationMatchResult(
   });
 }
 
+export async function recordMatchSkipped(applicationId: string) {
+  return prisma.applicationEvent.create({
+    data: {
+      applicationId,
+      type: "MATCH_SKIPPED",
+    },
+  });
+}
+
 export async function createSelectedGeneratedEmail(input: {
   applicationId: string;
   resumeId: string;

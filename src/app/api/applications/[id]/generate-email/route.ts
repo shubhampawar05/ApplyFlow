@@ -23,7 +23,13 @@ export async function POST(_request: Request, context: RouteContext) {
   } catch (error) {
     if (error instanceof ApplicationEmailError) {
       const status =
-        error.code === "NOT_FOUND" ? 404 : error.code === "AI_EMAIL_FAILED" ? 500 : 400;
+        error.code === "NOT_FOUND"
+          ? 404
+          : error.code === "DUPLICATE_BLOCKED"
+            ? 409
+            : error.code === "AI_EMAIL_FAILED"
+              ? 500
+              : 400;
       return apiError(error.code, error.message, status);
     }
 

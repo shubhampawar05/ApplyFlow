@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useId, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { FlowStepper } from "@/components/flow-stepper";
 
 const maxFileSize = 10 * 1024 * 1024;
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -106,23 +107,29 @@ export function NewApplicationPage({ userLabel }: { userLabel: string }) {
           A clear screenshot is enough to begin. You’ll review every extracted detail before we prepare an email.
         </p>
       </header>
-      <div className="progress" aria-label="Application progress">
-        <div className="progress-step">
-          <span className="step-number">01 — NOW</span>
-          <strong>Add screenshot</strong>
-          <span>Upload the job posting you found.</span>
-        </div>
-        <div className="progress-step">
-          <span className="step-number">02</span>
-          <strong>Review details</strong>
-          <span>Check the extracted role and contact.</span>
-        </div>
-        <div className="progress-step">
-          <span className="step-number">03</span>
-          <strong>Prepare email</strong>
-          <span>Refine a grounded application draft.</span>
-        </div>
-      </div>
+      <FlowStepper
+        activeStepId="screenshot"
+        steps={[
+          {
+            id: "screenshot",
+            label: "Add screenshot",
+            description: "Upload the job posting you found.",
+            status: "current",
+          },
+          {
+            id: "review",
+            label: "Review details",
+            description: "Check the extracted role and contact.",
+            status: "upcoming",
+          },
+          {
+            id: "email",
+            label: "Prepare email",
+            description: "Refine a grounded application draft.",
+            status: "upcoming",
+          },
+        ]}
+      />
       <section className="upload-card" aria-labelledby="upload-heading">
         <label className={`dropzone ${previewUrl ? "has-preview" : ""}`} htmlFor={inputId}>
           {previewUrl ? (

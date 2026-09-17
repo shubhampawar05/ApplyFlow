@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getApplicationFlowState } from "@/features/applications/application-flow-state";
+import { getApplicationFlowState, isMatchStepComplete } from "@/features/applications/application-flow-state";
+
+describe("isMatchStepComplete", () => {
+  it("returns true when match was skipped", () => {
+    expect(isMatchStepComplete([{ type: "MATCH_SKIPPED" }])).toBe(true);
+  });
+});
 
 describe("getApplicationFlowState", () => {
   it("marks screenshot complete and extract as current for a fresh draft", () => {
@@ -28,6 +34,21 @@ describe("getApplicationFlowState", () => {
     expect(flow.steps[1]?.status).toBe("complete");
     expect(flow.steps[2]?.status).toBe("current");
     expect(flow.nextAction?.message).toContain("Compare your resume");
+  });
+
+  it("keeps extract-review current when blocked by duplicate", () => {
+    const flow = getApplicationFlowState({
+      hasScreenshot: true,
+      extracted: true,
+      hasMatch: false,
+      hasEmailDraft: false,
+      status: "ANALYZED",
+      blockedByDuplicate: true,
+    });
+
+    expect(flow.steps[1]?.status).toBe("current");
+    expect(flow.steps[2]?.status).toBe("upcoming");
+    expect(flow.nextAction?.sectionId).toBe("section-duplicate-block");
   });
 
   it("hides next action after send", () => {
