@@ -1,6 +1,6 @@
 // Purpose: map job and resume records into deterministic analysis inputs.
 // Constraints: JSON-serializable snapshots only; no provider calls or persistence logic.
-import type { Job, ResumeProfile } from "@prisma/client";
+import type { Job, ResumeProfile } from "@/generated/prisma";
 
 export function toJobMatchInput(job: Job) {
   return {

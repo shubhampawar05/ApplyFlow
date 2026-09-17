@@ -56,4 +56,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# prisma generated client
+/src/generated/prisma
+
 # End of https://www.toptal.com/developers/gitignore/api/nextjs

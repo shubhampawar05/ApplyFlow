@@ -1,6 +1,6 @@
 // Purpose: map between Prisma job records and domain draft types.
 // Constraints: pure mapping functions only; no validation or side effects.
-import type { Job } from "@prisma/client";
+import type { Job } from "@/generated/prisma";
 import type { JobDraftInput } from "./job.schemas";
 import type { JobDraftForPersistence } from "./job.types";
 

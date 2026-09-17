@@ -6,6 +6,10 @@ ApplyFlow AI turns a job-posting screenshot into a personalized, reviewable, rea
 
 Screenshot -> AI extraction -> user review -> resume matching -> email generation -> user approval -> Gmail send -> application tracking.
 
+## Requirements
+
+- **Node.js 22+** (Supabase SDK requires it). With [nvm](https://github.com/nvm-sh/nvm): `nvm use` in the project root (reads `.nvmrc`).
+
 ## Authentication
 
 Google sign-in is provided by Supabase Auth. Follow `docs/14-AUTH-SETUP.md`. Do not put Google OAuth client secrets in this repository.
