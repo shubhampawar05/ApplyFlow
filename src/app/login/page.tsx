@@ -1,5 +1,17 @@
+import type { Metadata } from "next";
 import { GoogleSignInButton } from "./google-sign-in-button";
 import { safeNextPath } from "@/features/auth/auth.paths";
+import { pageMetadata } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = {
+  ...pageMetadata(
+    "Sign in",
+    "Sign in to ApplyFlow to review job applications, match your resume, and approve emails before anything is sent.",
+  ),
+  alternates: {
+    canonical: "/login",
+  },
+};
 
 export default async function LoginPage({
   searchParams,
