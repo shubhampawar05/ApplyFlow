@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { pageMetadata, privatePageMetadata } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = {
+  ...pageMetadata("Sign-in error", "ApplyFlow could not complete Google sign-in."),
+  ...privatePageMetadata,
+};
 
 const messages: Record<string, string> = {
   "missing-code": "Google did not return a sign-in code. Please try again.",

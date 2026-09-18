@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isPublicAuthPath, loginPathWithNext, safeNextPath } from "@/features/auth/auth.paths";
+import { isPublicPath, loginPathWithNext, safeNextPath } from "@/features/auth/auth.paths";
 import { getSupabasePublicEnv } from "./env";
 
 export async function updateSession(request: NextRequest) {
@@ -31,7 +31,7 @@ export async function updateSession(request: NextRequest) {
   const isAuthenticated = Boolean(data?.claims?.sub);
   const pathname = request.nextUrl.pathname;
 
-  if (!isAuthenticated && !isPublicAuthPath(pathname)) {
+  if (!isAuthenticated && !isPublicPath(pathname)) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Sign in required." } }, { status: 401 });
     }

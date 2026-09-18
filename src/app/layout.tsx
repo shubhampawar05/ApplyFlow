@@ -1,13 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { defaultSiteMetadata } from "@/lib/seo/metadata";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "ApplyFlow — Thoughtful applications, in motion",
-  description: "Turn a job screenshot into a reviewable application draft.",
-  icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
-  },
+export const metadata: Metadata = defaultSiteMetadata;
+
+export const viewport: Viewport = {
+  themeColor: "#2f6c52",
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
