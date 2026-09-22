@@ -46,3 +46,8 @@ export const resumeProfilePatchSchema = z
 export type ResumeParsingOutput = z.infer<typeof resumeParsingOutputSchema>;
 export type ResumeProfileContent = z.infer<typeof resumeProfileContentSchema>;
 export type ResumeProfilePatch = z.infer<typeof resumeProfilePatchSchema>;
+
+export function parseStoredResumeProfileContent(content: unknown) {
+  const result = resumeProfileContentSchema.safeParse(content);
+  return result.success ? result.data : null;
+}

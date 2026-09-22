@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { requireCurrentUser } from "@/features/auth/require-current-user";
-import { resumeProfileContentSchema } from "@/features/ai/resume-parsing.schema";
+import { parseStoredResumeProfileContent } from "@/features/ai/resume-parsing.schema";
 import { getGmailConnectionStatus } from "@/features/integrations/gmail/gmail.service";
 import { getDefaultProfileForUser } from "@/features/resume/resume-profile.service";
 import { GmailConnectPanel } from "./gmail-connect-panel";
@@ -21,7 +21,7 @@ export default async function SettingsPage() {
   const resumeBundle = await getDefaultProfileForUser(user.id);
   const resume = resumeBundle?.resume;
   const profile = resumeBundle?.profile;
-  const parsedContent = profile?.content ? resumeProfileContentSchema.parse(profile.content) : null;
+  const parsedContent = profile?.content ? parseStoredResumeProfileContent(profile.content) : null;
   const gmailStatus = await getGmailConnectionStatus(user.id);
 
   return (
@@ -68,6 +68,16 @@ export default async function SettingsPage() {
             }}
             resumeId={resume.id}
           />
+        </section>
+      ) : resume && profile ? (
+        <section className="settings-section">
+          <div className="empty-card">
+            <h2>Re-parse your resume to refresh the profile.</h2>
+            <p>
+              The saved profile could not be loaded safely. Run parse again to regenerate contact details, skills, and
+              experience.
+            </p>
+          </div>
         </section>
       ) : resume ? (
         <section className="settings-section">

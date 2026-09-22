@@ -17,6 +17,10 @@ type ToastContextValue = {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
+function variantDurationMs(variant: ToastVariant) {
+  return variant === "error" ? 6000 : 4000;
+}
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastState | null>(null);
 
@@ -41,10 +45,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       ) : null}
     </ToastContext.Provider>
   );
-}
-
-function variantDurationMs(variant: ToastVariant) {
-  return variant === "error" ? 6000 : 4000;
 }
 
 export function useToast() {

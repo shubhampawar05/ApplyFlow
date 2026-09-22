@@ -8,7 +8,15 @@ describe("getApiErrorMessage", () => {
     );
   });
 
+  it("falls back to a readable code when message is missing", () => {
+    expect(getApiErrorMessage({ error: { code: "UNAUTHORIZED" } }, "Fallback")).toBe("unauthorized");
+  });
+
   it("falls back when no error payload exists", () => {
     expect(getApiErrorMessage({}, "Fallback")).toBe("Fallback");
+  });
+
+  it("returns the fallback for unknown payloads", () => {
+    expect(getApiErrorMessage(null, "Fallback")).toBe("Fallback");
   });
 });

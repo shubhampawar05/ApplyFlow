@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AppProviders } from "@/components/app-providers";
 import { defaultSiteMetadata } from "@/lib/seo/metadata";
 import "./globals.css";
 
@@ -12,7 +13,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }
