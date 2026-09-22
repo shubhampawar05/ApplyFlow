@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 type GmailStatus = {
   connected: boolean;
   accountEmail?: string | null;
+  reconnectRequired?: boolean;
 };
 
 export function GmailConnectPanel({ initialStatus }: { initialStatus: GmailStatus }) {
@@ -65,8 +66,13 @@ export function GmailConnectPanel({ initialStatus }: { initialStatus: GmailStatu
           ApplyFlow only requests permission to send email. Nothing is sent without your explicit approval on each
           application.
         </p>
+        {status.reconnectRequired ? (
+          <p className="upload-error" role="alert">
+            Gmail needs to be reconnected before you can send applications.
+          </p>
+        ) : null}
         <a className="button secondary" href="/api/integrations/gmail/connect?returnTo=/settings">
-          {status.connected ? "Reconnect Gmail" : "Connect Gmail"}
+          {status.connected ? "Reconnect Gmail" : status.reconnectRequired ? "Reconnect Gmail" : "Connect Gmail"}
         </a>
         {notice ? <p className="quiet-note" role="status">{notice}</p> : null}
       </div>

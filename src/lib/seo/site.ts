@@ -6,10 +6,26 @@ export const siteTagline = "Thoughtful applications, in motion";
 export const siteDescription =
   "Turn a job screenshot into a reviewable application draft with AI-assisted extraction, resume matching, and human-approved Gmail sending.";
 
+function normalizeSiteUrl(value: string) {
+  const trimmed = value.trim().replace(/\/$/, "");
+  if (!trimmed) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  return `https://${trimmed}`;
+}
+
 export function getSiteUrl() {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (configured) {
-    return configured.replace(/\/$/, "");
+    const normalized = normalizeSiteUrl(configured);
+    if (normalized) {
+      return normalized;
+    }
   }
 
   const vercelUrl = process.env.VERCEL_URL?.trim();

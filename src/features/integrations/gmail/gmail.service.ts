@@ -90,18 +90,30 @@ async function getValidAccessToken(userId: string) {
   return refreshed.access_token;
 }
 
-export async function getGmailConnectionStatus(userId: string) {
+export type GmailConnectionStatus =
+  | { connected: false; reconnectRequired?: false }
+  | { connected: false; reconnectRequired: true }
+  | { connected: true; accountEmail: string | null; updatedAt: Date | null };
+
+export async function getGmailConnectionStatus(userId: string): Promise<GmailConnectionStatus> {
   const connected = await hasGoogleConnectionForUser(userId);
   if (!connected) {
-    return { connected: false as const };
+    return { connected: false };
   }
 
-  const connection = await getGoogleConnectionForUser(userId);
-  return {
-    connected: true as const,
-    accountEmail: connection?.providerAccountId ?? null,
-    updatedAt: connection?.updatedAt ?? null,
-  };
+  try {
+    const connection = await getGoogleConnectionForUser(userId);
+    return {
+      connected: true,
+      accountEmail: connection?.providerAccountId ?? null,
+      updatedAt: connection?.updatedAt ?? null,
+    };
+  } catch {
+    return {
+      connected: false,
+      reconnectRequired: true,
+    };
+  }
 }
 
 export async function sendGmailMessageForUser(

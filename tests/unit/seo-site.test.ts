@@ -24,6 +24,11 @@ describe("getSiteUrl", () => {
     expect(getSiteUrl()).toBe("https://applyflow.example.com");
   });
 
+  it("adds https when the site URL is configured without a protocol", () => {
+    process.env.NEXT_PUBLIC_SITE_URL = "applyflow.example.com";
+    expect(getSiteUrl()).toBe("https://applyflow.example.com");
+  });
+
   it("falls back to VERCEL_URL when site URL is not configured", () => {
     delete process.env.NEXT_PUBLIC_SITE_URL;
     process.env.VERCEL_URL = "applyflow.vercel.app";

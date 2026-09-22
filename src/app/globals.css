@@ -200,6 +200,7 @@ h1 { margin: 0; font-size: clamp(29px, 4vw, 42px); line-height: 1.08; letter-spa
 .application-timeline span { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .toast-viewport { position: fixed; right: 24px; bottom: 24px; z-index: 60; }
 .toast { min-width: 220px; max-width: 360px; padding: 12px 16px; border: 1px solid #cbdacd; border-radius: 10px; background: #f7fbf8; color: #224c39; box-shadow: 0 10px 30px rgba(23, 24, 23, .12); font-size: 14px; font-weight: 600; animation: toast-in .2s ease; }
+.toast-error { border-color: #e0b4b4; background: #fff5f5; color: #8a2f2f; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .error-recovery-hint { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .error-recovery-hint a { color: var(--accent-dark); font-weight: 600; }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resumeParsingOutputSchema } from "@/features/ai/resume-parsing.schema";
+import { parseStoredResumeProfileContent, resumeParsingOutputSchema } from "@/features/ai/resume-parsing.schema";
 import { toProfileUpsertData } from "@/features/resume/resume-profile.mapper";
 
 describe("resume parsing schema", () => {
@@ -26,6 +26,16 @@ describe("resume parsing schema", () => {
 
     expect(toProfileUpsertData(parsed).email).toBe("alex@example.com");
     expect(toProfileUpsertData(parsed).content.skills).toEqual(["TypeScript", "PostgreSQL"]);
+  });
+
+  it("returns null for stored profile content that no longer matches the schema", () => {
+    expect(
+      parseStoredResumeProfileContent({
+        skills: [],
+        experience: [{ title: "", company: "Acme", highlights: [] }],
+        education: [],
+      }),
+    ).toBeNull();
   });
 
   it("rejects invented contact details without valid email format", () => {
