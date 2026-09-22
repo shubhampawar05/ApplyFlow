@@ -93,7 +93,7 @@ async function getValidAccessToken(userId: string) {
 export type GmailConnectionStatus =
   | { connected: false; reconnectRequired?: false }
   | { connected: false; reconnectRequired: true }
-  | { connected: true; accountEmail: string | null; updatedAt: Date | null };
+  | { connected: true; accountEmail: string | null };
 
 export async function getGmailConnectionStatus(userId: string): Promise<GmailConnectionStatus> {
   const connected = await hasGoogleConnectionForUser(userId);
@@ -106,7 +106,6 @@ export async function getGmailConnectionStatus(userId: string): Promise<GmailCon
     return {
       connected: true,
       accountEmail: connection?.providerAccountId ?? null,
-      updatedAt: connection?.updatedAt ?? null,
     };
   } catch {
     return {
