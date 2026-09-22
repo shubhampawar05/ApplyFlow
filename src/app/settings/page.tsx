@@ -3,7 +3,7 @@ import { AppShell } from "@/components/app-shell";
 import { requireCurrentUser } from "@/features/auth/require-current-user";
 import { parseStoredResumeProfileContent } from "@/features/ai/resume-parsing.schema";
 import { getGmailConnectionStatus } from "@/features/integrations/gmail/gmail.service";
-import { getDefaultProfileForUser } from "@/features/resume/resume-profile.service";
+import { getDefaultResumeWithProfile } from "@/features/resume/resume.repository";
 import { GmailConnectPanel } from "./gmail-connect-panel";
 import { ResumeParseButton } from "./resume-parse-button";
 import { ResumePreview } from "./resume-preview";
@@ -18,9 +18,8 @@ function formatFileSize(bytes: number) {
 
 export default async function SettingsPage() {
   const user = await requireCurrentUser("/settings");
-  const resumeBundle = await getDefaultProfileForUser(user.id);
-  const resume = resumeBundle?.resume;
-  const profile = resumeBundle?.profile;
+  const resume = await getDefaultResumeWithProfile(user.id);
+  const profile = resume?.profile ?? null;
   const parsedContent = profile?.content ? parseStoredResumeProfileContent(profile.content) : null;
   const gmailStatus = await getGmailConnectionStatus(user.id);
 

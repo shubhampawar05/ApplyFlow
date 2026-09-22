@@ -4,13 +4,7 @@ import { completeAiRequest, createAiRequest } from "@/features/ai/ai.repository"
 import { resumeProfilePatchSchema, type ResumeProfilePatch } from "@/features/ai/resume-parsing.schema";
 import { downloadPrivateObject } from "@/lib/storage/object-storage";
 import { toProfileUpsertData } from "./resume-profile.mapper";
-import {
-  getResumeOwnedByUser,
-  getDefaultResumeWithProfile,
-  upsertResumeProfile,
-  updateResumeProfile,
-} from "./resume.repository";
-import { extractResumeText, ResumeTextExtractionError } from "./resume-text-extractor";
+import { getResumeOwnedByUser, upsertResumeProfile, updateResumeProfile } from "./resume.repository";
 
 export class ResumeProfileError extends Error {
   readonly code: string;
@@ -33,11 +27,12 @@ export async function parseResumeProfileForUser(userId: string, resumeId: string
   }
 
   const bytes = await downloadPrivateObject(resume.storageKey);
+  const textExtractor = await import("./resume-text-extractor");
   let resumeText: string;
   try {
-    resumeText = await extractResumeText(resume.mimeType, bytes);
+    resumeText = await textExtractor.extractResumeText(resume.mimeType, bytes);
   } catch (error) {
-    if (error instanceof ResumeTextExtractionError) {
+    if (error instanceof textExtractor.ResumeTextExtractionError) {
       throw new ResumeProfileError("TEXT_EXTRACTION_ERROR", error.message);
     }
     throw error;
@@ -68,12 +63,6 @@ export async function parseResumeProfileForUser(userId: string, resumeId: string
     if (error instanceof ResumeProfileError) throw error;
     throw new ResumeProfileError("AI_PARSE_FAILED", "We could not parse this resume. Try again or upload a clearer file.");
   }
-}
-
-export async function getDefaultProfileForUser(userId: string) {
-  const resume = await getDefaultResumeWithProfile(userId);
-  if (!resume) return null;
-  return { resume, profile: resume.profile };
 }
 
 export async function saveResumeProfileEdits(userId: string, resumeId: string, patch: ResumeProfilePatch) {

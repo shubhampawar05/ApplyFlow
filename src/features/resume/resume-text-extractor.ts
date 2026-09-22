@@ -1,6 +1,5 @@
-import { PDFParse } from "pdf-parse";
-import mammoth from "mammoth";
-
+// Purpose: extract plain text from uploaded PDF and DOCX resumes.
+// Constraints: lazy-load heavy parsers; server-only; no invented resume content.
 const pdfMimeType = "application/pdf";
 const docxMimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -14,6 +13,7 @@ export class ResumeTextExtractionError extends Error {
 }
 
 async function extractPdfText(bytes: Uint8Array) {
+  const { PDFParse } = await import("pdf-parse");
   const parser = new PDFParse({ data: bytes });
   const parsed = await parser.getText();
   await parser.destroy();
@@ -21,6 +21,7 @@ async function extractPdfText(bytes: Uint8Array) {
 }
 
 async function extractDocxText(bytes: Uint8Array) {
+  const mammoth = await import("mammoth");
   const parsed = await mammoth.extractRawText({ buffer: Buffer.from(bytes) });
   return parsed.value ?? "";
 }
