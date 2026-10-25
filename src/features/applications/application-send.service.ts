@@ -1,13 +1,20 @@
 // Purpose: orchestrate explicit, user-approved application email sending.
-// Constraints: verify readiness, recipient, resume, Gmail connection, and confirm flag before send.
+// Constraints: verify readiness, recipient, resume, Gmail connection, and confirm flag before send;
+// claim READY -> SENDING before Gmail so one request sends; never retry an unknown outcome.
 import { z } from "zod";
 import { gmailSendRequestSchema } from "@/features/integrations/gmail/gmail.schemas";
 import { GmailServiceError, sendGmailMessageForUser } from "@/features/integrations/gmail/gmail.service";
 import { downloadPrivateObject } from "@/lib/storage/object-storage";
 import { findLikelyDuplicateApplicationsForUser } from "./application-duplicate.service";
+import { isSentOrLater } from "./application.schemas";
+import { isSendOutcomeUnknown } from "./application-send-state";
 import {
+  claimApplicationForSend,
   getApplicationSendContext,
+  markSendOutcomeUnknown,
   recordSuccessfulEmailDelivery,
+  releaseSendClaim,
+  resolveUnknownSendOutcome,
 } from "./application.repository";
 
 export class ApplicationSendError extends Error {
@@ -20,6 +27,34 @@ export class ApplicationSendError extends Error {
     this.code = code;
     this.details = details;
   }
+}
+
+const SEND_OUTCOME_UNKNOWN_MESSAGE =
+  "We could not confirm whether this email was sent. Check your Gmail Sent folder, then tell ApplyFlow whether it went out.";
+
+function sendBlockedByStatus(application: {
+  status: string;
+  sendOutcomeUnknown: boolean;
+  sendStartedAt: Date | null;
+}) {
+  if (application.status === "SENDING") {
+    return isSendOutcomeUnknown(application)
+      ? new ApplicationSendError("SEND_OUTCOME_UNKNOWN", SEND_OUTCOME_UNKNOWN_MESSAGE)
+      : new ApplicationSendError("SEND_IN_PROGRESS", "This application email is already being sent.");
+  }
+
+  if (isSentOrLater(application.status)) {
+    return new ApplicationSendError("ALREADY_SENT", "This application email has already been sent.");
+  }
+
+  if (application.status !== "READY") {
+    return new ApplicationSendError(
+      "NOT_READY",
+      "Generate and save an email draft before sending this application.",
+    );
+  }
+
+  return null;
 }
 
 function isValidRecipientEmail(value: string | null | undefined) {
@@ -41,15 +76,9 @@ export async function sendApplicationEmailForUser(
     throw new ApplicationSendError("NOT_FOUND", "Application not found.");
   }
 
-  if (application.status === "SENT") {
-    throw new ApplicationSendError("ALREADY_SENT", "This application email has already been sent.");
-  }
-
-  if (application.status !== "READY") {
-    throw new ApplicationSendError(
-      "NOT_READY",
-      "Generate and save an email draft before sending this application.",
-    );
+  const statusError = sendBlockedByStatus(application);
+  if (statusError) {
+    throw statusError;
   }
 
   if (!application.resumeId || !application.resume) {
@@ -101,34 +130,86 @@ export async function sendApplicationEmailForUser(
     );
   }
 
+  const claim = await claimApplicationForSend(userId, application.id);
+  if (!claim.claimed) {
+    throw (
+      sendBlockedByStatus({
+        status: claim.status ?? "READY",
+        sendOutcomeUnknown: claim.sendOutcomeUnknown,
+        sendStartedAt: claim.sendStartedAt,
+      }) ?? new ApplicationSendError("SEND_IN_PROGRESS", "This application email is already being sent.")
+    );
+  }
+
+  let delivery: { providerMessageId: string };
   try {
-    const delivery = await sendGmailMessageForUser(userId, {
+    delivery = await sendGmailMessageForUser(userId, {
       to: selectedEmail.to,
       subject: selectedEmail.subject,
       body: selectedEmail.body,
       attachment: resumeAttachment,
     });
-
-    const result = await recordSuccessfulEmailDelivery({
-      applicationId: application.id,
-      generatedEmailId: selectedEmail.id,
-      recipient: selectedEmail.to,
-      providerMessageId: delivery.providerMessageId,
-    });
-
-    return result;
   } catch (error) {
+    if (error instanceof GmailServiceError && error.code === "GMAIL_SEND_UNKNOWN") {
+      await markSendOutcomeUnknown(application.id);
+      throw new ApplicationSendError("SEND_OUTCOME_UNKNOWN", SEND_OUTCOME_UNKNOWN_MESSAGE);
+    }
+
+    // Everything else fails before or is a definite rejection by Gmail, so the claim can be released.
+    await releaseSendClaim(application.id);
+
     if (error instanceof GmailServiceError) {
       throw new ApplicationSendError(error.code, error.message);
     }
 
-    if (error instanceof ApplicationSendError) {
-      throw error;
-    }
-
+    console.error("Gmail send preparation failed", { applicationId: application.id });
     throw new ApplicationSendError(
       "GMAIL_SEND_FAILED",
       "Gmail could not send this email right now. Your draft is still saved.",
     );
   }
+
+  try {
+    return await recordSuccessfulEmailDelivery({
+      applicationId: application.id,
+      generatedEmailId: selectedEmail.id,
+      recipient: selectedEmail.to,
+      providerMessageId: delivery.providerMessageId,
+    });
+  } catch {
+    console.error("Recording email delivery failed after Gmail send", { applicationId: application.id });
+    try {
+      await markSendOutcomeUnknown(application.id);
+    } catch {
+      // The stale-claim rule still surfaces this application as an unknown outcome.
+    }
+    throw new ApplicationSendError("SEND_OUTCOME_UNKNOWN", SEND_OUTCOME_UNKNOWN_MESSAGE);
+  }
+}
+
+const sendOutcomeResolutionSchema = z.object({ sent: z.boolean() }).strict();
+
+export async function resolveSendOutcomeForUser(userId: string, applicationId: string, body: unknown) {
+  const request = sendOutcomeResolutionSchema.parse(body);
+  const application = await getApplicationSendContext(userId, applicationId);
+  if (!application) {
+    throw new ApplicationSendError("NOT_FOUND", "Application not found.");
+  }
+
+  if (!isSendOutcomeUnknown(application)) {
+    throw new ApplicationSendError(
+      "NOT_RESOLVABLE",
+      "This application does not have an unconfirmed send to resolve.",
+    );
+  }
+
+  const resolved = await resolveUnknownSendOutcome(application.id, { sent: request.sent });
+  if (!resolved) {
+    throw new ApplicationSendError(
+      "NOT_RESOLVABLE",
+      "This application does not have an unconfirmed send to resolve.",
+    );
+  }
+
+  return { application: resolved };
 }

@@ -1,0 +1,55 @@
+schema: spec-driven
+
+# Hard constraints for ApplyFlow AI. Source of truth: AGENTS.md and docs/.
+# Keep this list short; link to docs/ instead of copying specs here.
+context: |
+  ApplyFlow AI is a personal job-application assistant (Next.js modular monolith).
+  Core flow: screenshot -> structured job -> resume match -> email -> human approval -> Gmail send.
+
+  Non-negotiable product rules (docs/03-PRD.md, docs/08-AI-SPEC.md):
+  - Never send an email without an explicit user action and confirmation.
+  - No autonomous sending, mass applications, browser/LinkedIn automation, scraping, or CAPTCHA solving.
+  - Candidate claims come only from the selected structured resume/profile; never fabricate.
+  - Unknown job fields stay null/unknown; never guess.
+  - AI only suggests structured output; deterministic code owns authorization, persistence,
+    state transitions, recipient validation, and sending.
+  - A successful send creates an immutable delivery event.
+
+  Engineering rules (AGENTS.md, docs/05-TECHNICAL-SPEC.md, docs/09-SECURITY.md):
+  - TypeScript strict; Zod validation at every API boundary and for every AI output.
+  - Prisma for all DB access; every public table has RLS enabled.
+  - Every query is scoped to the authenticated User (linked by authUserId); check ownership (no IDOR).
+  - Secrets, OAuth tokens and provider SDKs are server-only; never in client code, responses, or logs.
+  - Resume/screenshot files are private; browser access only via short-lived signed URLs.
+  - Send the AI provider only the minimum data; treat screenshot text as untrusted (prompt injection).
+  - Route handlers stay thin; business logic lives in domain services under src/features or src/lib.
+  - Every source file keeps the header contract described in AGENTS.md.
+  - If a change alters a product requirement, update the relevant docs/ file first.
+
+rules:
+  proposal:
+    - State explicitly whether the change touches email sending, AI output, auth, or file access, and how the guardrails above still hold
+    - List affected docs/ files that must be updated
+    - Always state what is out of scope
+  specs:
+    - Include scenarios for error states and unauthorized/cross-user access where data is involved
+    - For AI features, include scenarios for malformed output and missing/ambiguous fields
+    - For any send path, include a scenario proving nothing is sent without explicit confirmation
+  design:
+    - Name the domain module (auth, users, resumes, jobs, applications, ai, integrations, files) that owns the logic
+    - Define Zod schemas for new API inputs and AI outputs
+    - Note any new secret, OAuth scope, or Prisma migration (including RLS on new tables)
+  tasks:
+    - Include tasks for unit tests (domain logic), integration tests (API/adapters), and Playwright when a critical journey changes
+    - Include a task to update docs/15-PROGRESS.md and any affected docs/ file
+    - End with running npm run lint, npm run typecheck, and npm test
+
+operations:
+  apply:
+    guidance:
+      - Read the nearest AGENTS.md and the target file's header contract before editing
+      - Make the smallest coherent change; do not invent requirements beyond the specs
+      - Never log secrets, tokens, or personal application data
+  archive:
+    guidance:
+      - Confirm docs/15-PROGRESS.md reflects the archived change

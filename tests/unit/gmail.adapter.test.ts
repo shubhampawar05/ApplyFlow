@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { gmailAdapter } from "@/features/integrations/gmail/gmail.adapter";
 
 function decodeRawMime(encoded: string) {
@@ -43,5 +43,63 @@ describe("gmail adapter", () => {
     expect(mime).toContain("Content-Transfer-Encoding: base64");
     expect(mime).toContain("Please find my resume attached.");
     expect(mime).toContain("JVBERg==");
+  });
+
+  describe("sendRawMessage error classification", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    function stubFetchResponse(status: number, body: unknown = {}) {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response(JSON.stringify(body), { status })),
+      );
+    }
+
+    it("returns the Gmail message id on success", async () => {
+      stubFetchResponse(200, { id: "msg-1" });
+      await expect(gmailAdapter.sendRawMessage("token", "raw")).resolves.toMatchObject({ id: "msg-1" });
+    });
+
+    it("treats a 400 as a definite rejection", async () => {
+      stubFetchResponse(400);
+      await expect(gmailAdapter.sendRawMessage("token", "raw")).rejects.toMatchObject({
+        code: "GMAIL_SEND_REJECTED",
+      });
+    });
+
+    it("treats a 429 as an unknown outcome", async () => {
+      stubFetchResponse(429);
+      await expect(gmailAdapter.sendRawMessage("token", "raw")).rejects.toMatchObject({
+        code: "GMAIL_SEND_UNKNOWN",
+      });
+    });
+
+    it("treats a 500 as an unknown outcome", async () => {
+      stubFetchResponse(500);
+      await expect(gmailAdapter.sendRawMessage("token", "raw")).rejects.toMatchObject({
+        code: "GMAIL_SEND_UNKNOWN",
+      });
+    });
+
+    it("treats a network failure as an unknown outcome", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => {
+          throw new TypeError("fetch failed");
+        }),
+      );
+      await expect(gmailAdapter.sendRawMessage("token", "raw")).rejects.toMatchObject({
+        code: "GMAIL_SEND_UNKNOWN",
+      });
+    });
+
+    it("treats a success response without a message id as an unknown outcome", async () => {
+      stubFetchResponse(200, {});
+      await expect(gmailAdapter.sendRawMessage("token", "raw")).rejects.toMatchObject({
+        code: "GMAIL_SEND_UNKNOWN",
+      });
+    });
   });
 });

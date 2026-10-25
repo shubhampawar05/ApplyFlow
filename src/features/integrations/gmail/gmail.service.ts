@@ -130,6 +130,9 @@ export async function sendGmailMessageForUser(
       throw new GmailServiceError(error.code, error.message);
     }
 
-    throw new GmailServiceError("GMAIL_SEND_FAILED", "Gmail could not send this email right now.");
+    throw new GmailServiceError(
+      "GMAIL_SEND_UNKNOWN",
+      "We could not confirm whether Gmail sent this email. Check your Gmail Sent folder.",
+    );
   }
 }

@@ -1,3 +1,5 @@
+// Purpose: chronological list of an application's events on the detail page.
+// Constraints: presentational only; events are already owner-scoped.
 type TimelineEvent = {
   id: string;
   type: string;
@@ -22,6 +24,16 @@ function formatEventLabel(event: TimelineEvent) {
       return "Email draft generated";
     case "EMAIL_SENT":
       return "Application email sent";
+    case "SEND_CONFIRMED_MANUALLY":
+      return "Marked as sent by you";
+    case "SEND_MARKED_NOT_SENT":
+      return "Marked as not sent by you";
+    case "FOLLOW_UP_RESCHEDULED":
+      return "Follow-up date changed";
+    case "FOLLOW_UP_COMPLETED":
+      return "Follow-up done";
+    case "FOLLOW_UP_CLEARED":
+      return "Follow-up cleared";
     default:
       return event.type.replaceAll("_", " ").toLowerCase();
   }
@@ -42,7 +54,14 @@ function timelineIcon(eventType: string) {
     case "EMAIL_GENERATED":
       return "✎";
     case "EMAIL_SENT":
+    case "SEND_CONFIRMED_MANUALLY":
       return "↑";
+    case "SEND_MARKED_NOT_SENT":
+      return "↺";
+    case "FOLLOW_UP_RESCHEDULED":
+    case "FOLLOW_UP_COMPLETED":
+    case "FOLLOW_UP_CLEARED":
+      return "⏲";
     default:
       return "•";
   }

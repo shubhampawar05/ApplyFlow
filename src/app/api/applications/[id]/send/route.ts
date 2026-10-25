@@ -10,6 +10,23 @@ import { ZodError } from "zod";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
+function sendErrorStatus(code: string) {
+  switch (code) {
+    case "NOT_FOUND":
+      return 404;
+    case "DUPLICATE_WARNING":
+    case "SEND_IN_PROGRESS":
+    case "SEND_OUTCOME_UNKNOWN":
+    case "ALREADY_SENT":
+      return 409;
+    case "GMAIL_SEND_FAILED":
+    case "GMAIL_SEND_REJECTED":
+      return 502;
+    default:
+      return 400;
+  }
+}
+
 export async function POST(request: Request, context: RouteContext) {
   const user = await getApiCurrentUser();
   if (!user) {
@@ -34,14 +51,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     if (error instanceof ApplicationSendError) {
-      const status =
-        error.code === "NOT_FOUND"
-          ? 404
-          : error.code === "DUPLICATE_WARNING"
-            ? 409
-            : error.code === "GMAIL_SEND_FAILED"
-              ? 502
-              : 400;
+      const status = sendErrorStatus(error.code);
       return apiError(error.code, error.message, status, error.details);
     }
 

@@ -15,6 +15,7 @@ import {
 } from "./application-duplicate.service";
 import { parseStoredMatchDetails } from "./application-match.service";
 import { toJobMatchInput, toResumeMatchInput } from "./application-match.mapper";
+import { isSentOrLater } from "./application.schemas";
 import {
   createSelectedGeneratedEmail,
   getApplicationEmailContext,
@@ -42,6 +43,16 @@ function isValidRecipientEmail(value: string | null | undefined) {
   return z.string().trim().email().max(320).safeParse(value).success;
 }
 
+// Once sending starts, the draft is the record of what was sent and must not change.
+function assertEmailEditable(status: string) {
+  if (status === "SENDING" || isSentOrLater(status)) {
+    throw new ApplicationEmailError(
+      "EMAIL_LOCKED",
+      "This email has already been sent or is being sent, so it can no longer be changed.",
+    );
+  }
+}
+
 function getLatestMatchAnalysis(events: Array<{ metadata: unknown }>) {
   const latest = events[0];
   return latest ? parseStoredMatchDetails(latest.metadata) : null;
@@ -61,6 +72,8 @@ export async function generateApplicationEmailForUser(userId: string, applicatio
   if (!application) {
     throw new ApplicationEmailError("NOT_FOUND", "Application not found.");
   }
+
+  assertEmailEditable(application.status);
 
   if (!isValidRecipientEmail(application.job.applicationEmail)) {
     throw new ApplicationEmailError(
@@ -141,6 +154,8 @@ export async function updateApplicationEmailForUser(
   if (!application) {
     throw new ApplicationEmailError("NOT_FOUND", "Application not found.");
   }
+
+  assertEmailEditable(application.status);
 
   const selectedEmail = application.emails.find((email) => email.isSelected) ?? application.emails[0];
   if (!selectedEmail) {

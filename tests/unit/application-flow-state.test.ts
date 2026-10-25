@@ -126,4 +126,35 @@ describe("getApplicationFlowState", () => {
     expect(flow.steps.every((step) => step.status === "complete")).toBe(true);
     expect(flow.nextAction).toBeNull();
   });
+
+  it("shows the send step complete once the application has moved past SENT", () => {
+    for (const status of ["FOLLOW_UP", "INTERVIEW", "REJECTED", "OFFER", "CLOSED"]) {
+      const flow = getApplicationFlowState({
+        hasScreenshot: true,
+        extracted: true,
+        jobReviewComplete: true,
+        hasMatch: true,
+        hasEmailDraft: true,
+        status,
+      });
+
+      expect(flow.steps.every((step) => step.status === "complete")).toBe(true);
+      expect(flow.nextAction).toBeNull();
+    }
+  });
+
+  it("keeps the send step current while a send is unresolved", () => {
+    const flow = getApplicationFlowState({
+      hasScreenshot: true,
+      extracted: true,
+      jobReviewComplete: true,
+      hasMatch: true,
+      hasEmailDraft: true,
+      status: "SENDING",
+    });
+
+    expect(flow.steps[3]?.status).toBe("complete");
+    expect(flow.steps[4]?.status).toBe("current");
+    expect(flow.nextAction?.sectionId).toBe("section-send");
+  });
 });

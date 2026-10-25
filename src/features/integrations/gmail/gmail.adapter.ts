@@ -162,21 +162,54 @@ function encodeMimeMessage(input: { to: string; subject: string; body: string; a
     .replace(/=+$/, "");
 }
 
-async function sendRawMessage(accessToken: string, rawMessage: string) {
-  const response = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ raw: rawMessage }),
-  });
+// A 4xx (except 429) proves Gmail did not send. Anything else after the request leaves may have sent.
+function isDefiniteSendRejection(status: number) {
+  return status >= 400 && status < 500 && status !== 429;
+}
 
-  if (!response.ok) {
-    throw new GmailAdapterError("GMAIL_SEND_FAILED", "Gmail rejected the send request. Review the draft and try again.");
+function sendOutcomeUnknownError() {
+  return new GmailAdapterError(
+    "GMAIL_SEND_UNKNOWN",
+    "We could not confirm whether Gmail sent this email. Check your Gmail Sent folder.",
+  );
+}
+
+async function sendRawMessage(accessToken: string, rawMessage: string) {
+  let response: Response;
+  try {
+    response = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ raw: rawMessage }),
+    });
+  } catch {
+    throw sendOutcomeUnknownError();
   }
 
-  return (await response.json()) as GmailSendResponse;
+  if (!response.ok) {
+    if (isDefiniteSendRejection(response.status)) {
+      throw new GmailAdapterError(
+        "GMAIL_SEND_REJECTED",
+        "Gmail rejected the send request. Review the draft and try again.",
+      );
+    }
+
+    throw sendOutcomeUnknownError();
+  }
+
+  try {
+    const body = (await response.json()) as Partial<GmailSendResponse>;
+    if (typeof body.id !== "string" || !body.id) {
+      throw new Error("Missing message id");
+    }
+
+    return body as GmailSendResponse;
+  } catch {
+    throw sendOutcomeUnknownError();
+  }
 }
 
 export const gmailAdapter = {
