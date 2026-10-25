@@ -1,25 +1,38 @@
+// Purpose: dashboard with summary, follow-ups due, and a searchable, sortable application list.
+// Constraints: server component; every query scoped to the signed-in user; filter state lives in the URL.
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { getDashboardSummaryForUser } from "@/features/applications/application-analytics.service";
-import { applicationStatusSchema } from "@/features/applications/application.schemas";
-import { listApplicationsForUser } from "@/features/applications/application.repository";
+import {
+  listApplicationsForUser,
+  listDueFollowUpsForUser,
+} from "@/features/applications/application.repository";
 import { requireCurrentUser } from "@/features/auth/require-current-user";
 import { ApplicationList } from "./application-list";
+import { dashboardHref, hasActiveFilters, parseDashboardQuery } from "./dashboard-query";
 import { DashboardFilters } from "./dashboard-filters";
+import { DashboardSearch } from "./dashboard-search";
 import { DashboardSummary } from "./dashboard-summary";
+import { FollowUpsDue } from "./follow-ups-due";
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await requireCurrentUser("/dashboard");
-  const params = await searchParams;
-  const statusResult = params.status ? applicationStatusSchema.safeParse(params.status) : null;
-  const status = statusResult?.success ? statusResult.data : undefined;
-  const [applications, summary] = await Promise.all([
-    listApplicationsForUser(user.id, { status }),
+  const query = parseDashboardQuery(await searchParams);
+  const now = new Date();
+  const [applications, summary, dueFollowUps] = await Promise.all([
+    listApplicationsForUser(user.id, {
+      status: query.status,
+      q: query.q,
+      sort: query.sort,
+      needsAction: query.view === "needs-action",
+      now,
+    }),
     getDashboardSummaryForUser(user.id),
+    listDueFollowUpsForUser(user.id, now),
   ]);
 
   return (
@@ -40,12 +53,20 @@ export default async function DashboardPage({
 
       <DashboardSummary summary={summary} />
 
-      <section aria-labelledby="recent-applications">
+      <FollowUpsDue items={dueFollowUps} now={now} />
+
+      <section aria-labelledby="recent-applications" className="dashboard-applications">
         <p className="section-label" id="recent-applications">
-          Recent applications
+          Applications
         </p>
-        <DashboardFilters activeStatus={status} />
-        <ApplicationList applications={applications} />
+        <DashboardSearch query={query} />
+        <DashboardFilters query={query} />
+        <ApplicationList
+          applications={applications}
+          clearHref={dashboardHref({ sort: query.sort })}
+          filtered={hasActiveFilters(query)}
+          now={now}
+        />
       </section>
     </AppShell>
   );

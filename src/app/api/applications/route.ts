@@ -12,9 +12,13 @@ export async function GET(request: Request) {
   }
 
   const requestUrl = new URL(request.url);
+  const param = (name: string) => requestUrl.searchParams.get(name) ?? undefined;
   const query = {
-    limit: requestUrl.searchParams.get("limit"),
-    status: requestUrl.searchParams.get("status"),
+    limit: param("limit"),
+    status: param("status"),
+    q: param("q"),
+    sort: param("sort"),
+    view: param("view"),
   };
 
   try {

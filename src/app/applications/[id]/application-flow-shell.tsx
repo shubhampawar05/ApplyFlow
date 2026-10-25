@@ -15,6 +15,7 @@ type ApplicationFlowShellProps = {
   nextAction: ApplicationFlowNextAction | null;
   panels: Partial<Record<FlowStepId, ReactNode>>;
   tracking?: ReactNode;
+  rail?: ReactNode;
 };
 
 function getCurrentStepId(steps: FlowStep[]) {
@@ -30,7 +31,7 @@ function buildStepStateKey(steps: FlowStep[]) {
   return steps.map((step) => `${step.id}:${step.status}`).join("|");
 }
 
-export function ApplicationFlowShell({ steps, nextAction, panels, tracking }: ApplicationFlowShellProps) {
+export function ApplicationFlowShell({ steps, nextAction, panels, tracking, rail }: ApplicationFlowShellProps) {
   const serverCurrentStepId = getCurrentStepId(steps);
   const stepStateKey = useMemo(() => buildStepStateKey(steps), [steps]);
   const [viewingStepId, setViewingStepId] = useState<FlowStepId>(serverCurrentStepId);
@@ -110,25 +111,34 @@ export function ApplicationFlowShell({ steps, nextAction, panels, tracking }: Ap
           ) : null}
         </div>
 
-        <div className="application-flow-panel">
-          <div className="application-flow-panel-head">
-            <p className="application-flow-step-count">
-              Step {viewingStepNumber} of {steps.length}
-            </p>
-            <h2 className="application-flow-step-title">{viewingStep?.label}</h2>
-          </div>
-
-          <div className="application-flow-panel-body">
-            {viewingPanel ?? (
-              <div className="empty-card">
-                <h2>Finish the previous step first.</h2>
-                <p>This stage unlocks once the earlier steps in the flow are complete.</p>
+        <div className={rail ? "application-workspace" : undefined}>
+          {rail ? <div className="application-workspace-rail">{rail}</div> : null}
+          <div className="application-workspace-main">
+            <div className="application-flow-panel">
+              <div className="application-flow-panel-head">
+                <p className="application-flow-step-count">
+                  Step {viewingStepNumber} of {steps.length}
+                </p>
+                <h2 className="application-flow-step-title">{viewingStep?.label}</h2>
               </div>
-            )}
+
+              <div className="application-flow-panel-body">
+                {viewingPanel ?? (
+                  <div className="empty-card">
+                    <h2>Finish the previous step first.</h2>
+                    <p>This stage unlocks once the earlier steps in the flow are complete.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {tracking ? (
+              <div className="application-flow-tracking" id="section-tracking">
+                {tracking}
+              </div>
+            ) : null}
           </div>
         </div>
-
-        {tracking ? <div className="application-flow-tracking">{tracking}</div> : null}
       </div>
     </ApplicationFlowNavigationContext.Provider>
   );

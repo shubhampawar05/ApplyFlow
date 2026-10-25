@@ -1,5 +1,10 @@
 // Purpose: derive application detail flow stepper state and next-action guidance.
 // Constraints: pure functions only; no React or persistence logic.
+import { isSentOrLater } from "./application.schemas";
+
+function isDraftLocked(status: string) {
+  return status === "READY" || status === "SENDING" || isSentOrLater(status);
+}
 
 export type FlowStepId = "screenshot" | "extract-review" | "match" | "email" | "send";
 
@@ -26,7 +31,7 @@ const FLOW_STEP_DEFINITIONS: Array<{ id: FlowStepId; label: string; sectionId: s
 ];
 
 export function isEmailReviewStepComplete(status: string) {
-  return status === "READY" || status === "SENT";
+  return isDraftLocked(status);
 }
 
 export function isMatchStepComplete(events: Array<{ type: string }>) {
@@ -46,7 +51,7 @@ export function isJobReviewStepComplete(input: {
     return true;
   }
 
-  return input.hasEmailDraft || input.status === "READY" || input.status === "SENT";
+  return input.hasEmailDraft || isDraftLocked(input.status);
 }
 
 export function getApplicationFlowState(input: {
@@ -63,7 +68,7 @@ export function getApplicationFlowState(input: {
     input.jobReviewComplete,
     input.hasMatch,
     isEmailReviewStepComplete(input.status),
-    input.status === "SENT",
+    isSentOrLater(input.status),
   ];
 
   const firstIncompleteIndex = completions.findIndex((complete) => !complete);
@@ -105,8 +110,15 @@ function getNextAction(input: {
   status: string;
   blockedByDuplicate?: boolean;
 }): ApplicationFlowNextAction | null {
-  if (input.status === "SENT") {
+  if (isSentOrLater(input.status)) {
     return null;
+  }
+
+  if (input.status === "SENDING") {
+    return {
+      message: "Confirm whether this email was sent before doing anything else.",
+      sectionId: "section-send",
+    };
   }
 
   switch (input.currentStepId) {

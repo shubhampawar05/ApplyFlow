@@ -1,6 +1,7 @@
 // Purpose: detect likely duplicate applications and block costly flow steps early.
 // Constraints: deterministic comparison only; reuse job.service duplicate rules; no Gmail or HTTP logic.
 import { isLikelyDuplicate, normalizeJobIdentity } from "@/features/jobs/job.service";
+import { isSentOrLater } from "./application.schemas";
 import { getApplicationForUser, listApplicationsForDuplicateCheck } from "./application.repository";
 
 export type DuplicateApplicationSummary = {
@@ -35,7 +36,7 @@ export function shouldBlockApplicationForDuplicates(input: {
   duplicates: DuplicateApplicationSummary[];
 }) {
   return (
-    input.status !== "SENT" &&
+    !isSentOrLater(input.status) &&
     isDuplicateDetectionReady(input.job) &&
     input.duplicates.length > 0
   );
@@ -47,7 +48,7 @@ export async function assertApplicationNotDuplicateBlocked(userId: string, appli
     throw new ApplicationDuplicateError("Application not found.", []);
   }
 
-  if (application.status === "SENT") {
+  if (isSentOrLater(application.status)) {
     return;
   }
 

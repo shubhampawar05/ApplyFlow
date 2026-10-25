@@ -5,6 +5,15 @@ import type { EmailPatch } from "@/features/ai/email-generation.schema";
 import type { ResumeMatchingOutput } from "@/features/ai/resume-matching.schema";
 import { prisma } from "@/lib/prisma";
 
+// Statuses an application can be moved between by editing; sending and later are never undone by edits.
+const preSendStatuses = new Set<ApplicationStatus>(["DRAFT", "ANALYZED", "READY"]);
+
+export const FOLLOW_UP_DEFAULT_DAYS = 7;
+
+export function defaultFollowUpAt(from: Date) {
+  return new Date(from.getTime() + FOLLOW_UP_DEFAULT_DAYS * 24 * 60 * 60 * 1000);
+}
+
 export async function getApplicationForUser(userId: string, applicationId: string) {
   return prisma.application.findFirst({
     where: { id: applicationId, userId },
@@ -225,7 +234,7 @@ export async function markApplicationReady(applicationId: string) {
     throw new Error("APPLICATION_NOT_FOUND");
   }
 
-  if (application.status === "READY") {
+  if (application.status === "READY" || !preSendStatuses.has(application.status)) {
     return prisma.application.findUniqueOrThrow({
       where: { id: applicationId },
       select: {
@@ -275,7 +284,7 @@ export async function markApplicationAnalyzedForJob(userId: string, jobId: strin
     return null;
   }
 
-  if (application.status === "ANALYZED") {
+  if (application.status === "ANALYZED" || !preSendStatuses.has(application.status)) {
     return application;
   }
 
@@ -318,41 +327,95 @@ export async function getApplicationSendContext(userId: string, applicationId: s
   });
 }
 
+export type SendClaimResult =
+  | { claimed: true }
+  | { claimed: false; status: ApplicationStatus | null; sendOutcomeUnknown: boolean; sendStartedAt: Date | null };
+
+export async function claimApplicationForSend(
+  userId: string,
+  applicationId: string,
+  now: Date = new Date(),
+): Promise<SendClaimResult> {
+  const result = await prisma.application.updateMany({
+    where: { id: applicationId, userId, status: "READY" },
+    data: { status: "SENDING", sendStartedAt: now, sendOutcomeUnknown: false },
+  });
+
+  if (result.count === 1) {
+    return { claimed: true };
+  }
+
+  const current = await prisma.application.findFirst({
+    where: { id: applicationId, userId },
+    select: { status: true, sendOutcomeUnknown: true, sendStartedAt: true },
+  });
+
+  return {
+    claimed: false,
+    status: current?.status ?? null,
+    sendOutcomeUnknown: current?.sendOutcomeUnknown ?? false,
+    sendStartedAt: current?.sendStartedAt ?? null,
+  };
+}
+
+export async function releaseSendClaim(applicationId: string) {
+  return prisma.application.updateMany({
+    where: { id: applicationId, status: "SENDING" },
+    data: { status: "READY", sendStartedAt: null, sendOutcomeUnknown: false },
+  });
+}
+
+export async function markSendOutcomeUnknown(applicationId: string) {
+  return prisma.application.updateMany({
+    where: { id: applicationId, status: "SENDING" },
+    data: { sendOutcomeUnknown: true },
+  });
+}
+
 export async function recordSuccessfulEmailDelivery(input: {
   applicationId: string;
   generatedEmailId: string;
   recipient: string;
   providerMessageId: string;
+  sentAt?: Date;
 }) {
+  const sentAt = input.sentAt ?? new Date();
+
   return prisma.$transaction(async (tx) => {
-    const application = await tx.application.findUnique({
-      where: { id: input.applicationId },
-      select: { id: true, status: true },
-    });
-
-    if (!application) {
-      throw new Error("APPLICATION_NOT_FOUND");
-    }
-
     const delivery = await tx.emailDelivery.create({
       data: {
         applicationId: input.applicationId,
         generatedEmailId: input.generatedEmailId,
         recipient: input.recipient,
         providerMessageId: input.providerMessageId,
-        sentAt: new Date(),
+        sentAt,
       },
     });
 
-    const updatedApplication = await tx.application.update({
+    const claimed = await tx.application.updateMany({
+      where: { id: input.applicationId, status: "SENDING" },
+      data: {
+        status: "SENT",
+        sendStartedAt: null,
+        sendOutcomeUnknown: false,
+        followUpAt: defaultFollowUpAt(sentAt),
+        followUpCompletedAt: null,
+      },
+    });
+
+    if (claimed.count !== 1) {
+      throw new Error("SEND_CLAIM_LOST");
+    }
+
+    const updatedApplication = await tx.application.findUniqueOrThrow({
       where: { id: input.applicationId },
-      data: { status: "SENT" },
       select: {
         id: true,
         status: true,
         jobId: true,
         resumeId: true,
         matchScore: true,
+        followUpAt: true,
         updatedAt: true,
       },
     });
@@ -361,7 +424,7 @@ export async function recordSuccessfulEmailDelivery(input: {
       data: {
         applicationId: input.applicationId,
         type: "EMAIL_SENT",
-        fromStatus: application.status,
+        fromStatus: "SENDING",
         toStatus: "SENT",
         metadata: {
           providerMessageId: input.providerMessageId,
@@ -371,6 +434,93 @@ export async function recordSuccessfulEmailDelivery(input: {
     });
 
     return { application: updatedApplication, delivery };
+  });
+}
+
+export async function resolveUnknownSendOutcome(
+  applicationId: string,
+  input: { sent: boolean; now?: Date },
+) {
+  const now = input.now ?? new Date();
+
+  return prisma.$transaction(async (tx) => {
+    const resolved = await tx.application.updateMany({
+      where: { id: applicationId, status: "SENDING" },
+      data: input.sent
+        ? {
+            status: "SENT",
+            sendStartedAt: null,
+            sendOutcomeUnknown: false,
+            followUpAt: defaultFollowUpAt(now),
+            followUpCompletedAt: null,
+          }
+        : { status: "READY", sendStartedAt: null, sendOutcomeUnknown: false },
+    });
+
+    if (resolved.count !== 1) {
+      return null;
+    }
+
+    await tx.applicationEvent.create({
+      data: {
+        applicationId,
+        type: input.sent ? "SEND_CONFIRMED_MANUALLY" : "SEND_MARKED_NOT_SENT",
+        fromStatus: "SENDING",
+        toStatus: input.sent ? "SENT" : "READY",
+        metadata: { manual: true },
+      },
+    });
+
+    return tx.application.findUniqueOrThrow({
+      where: { id: applicationId },
+      select: { id: true, status: true, followUpAt: true, updatedAt: true },
+    });
+  });
+}
+
+export async function updateApplicationFollowUp(
+  applicationId: string,
+  input: {
+    data: { followUpAt?: Date | null; followUpCompletedAt?: Date | null };
+    eventType: "FOLLOW_UP_RESCHEDULED" | "FOLLOW_UP_COMPLETED" | "FOLLOW_UP_CLEARED";
+    metadata?: Prisma.InputJsonValue;
+  },
+) {
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.application.update({
+      where: { id: applicationId },
+      data: input.data,
+      select: { id: true, status: true, followUpAt: true, followUpCompletedAt: true, updatedAt: true },
+    });
+
+    await tx.applicationEvent.create({
+      data: {
+        applicationId,
+        type: input.eventType,
+        ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+      },
+    });
+
+    return updated;
+  });
+}
+
+export async function listDueFollowUpsForUser(userId: string, now: Date = new Date()) {
+  return prisma.application.findMany({
+    where: {
+      userId,
+      status: { in: ["SENT", "FOLLOW_UP"] },
+      followUpAt: { lte: now },
+      followUpCompletedAt: null,
+    },
+    orderBy: { followUpAt: "asc" },
+    take: 20,
+    select: {
+      id: true,
+      status: true,
+      followUpAt: true,
+      job: { select: { company: true, title: true } },
+    },
   });
 }
 
@@ -436,6 +586,7 @@ export async function getApplicationStatsForUser(userId: string) {
   const draft = read("DRAFT");
   const analyzed = read("ANALYZED");
   const ready = read("READY");
+  const sending = read("SENDING");
   const sent = read("SENT");
   const followUp = read("FOLLOW_UP");
   const interview = read("INTERVIEW");
@@ -447,33 +598,79 @@ export async function getApplicationStatsForUser(userId: string) {
     draft,
     analyzed,
     ready,
+    sending,
     sent,
     followUp,
     interview,
     rejected,
     offer,
     closed,
-    total: draft + analyzed + ready + sent + followUp + interview + rejected + offer + closed,
+    total: draft + analyzed + ready + sending + sent + followUp + interview + rejected + offer + closed,
   };
 }
 
 export async function listApplicationsForUser(
   userId: string,
-  options: { limit?: number; status?: ApplicationStatus } = {},
+  options: {
+    limit?: number;
+    status?: ApplicationStatus;
+    q?: string;
+    sort?: "updated" | "created" | "match";
+    needsAction?: boolean;
+    now?: Date;
+  } = {},
 ) {
-  const limit = options.limit ?? 20;
+  const limit = options.limit ?? 50;
+  const now = options.now ?? new Date();
+  const and: Prisma.ApplicationWhereInput[] = [];
+
+  if (options.status) {
+    and.push({ status: options.status });
+  }
+
+  if (options.q) {
+    and.push({
+      job: {
+        OR: [
+          { company: { contains: options.q, mode: "insensitive" } },
+          { title: { contains: options.q, mode: "insensitive" } },
+        ],
+      },
+    });
+  }
+
+  if (options.needsAction) {
+    and.push({
+      OR: [
+        { status: { in: ["DRAFT", "ANALYZED", "READY", "SENDING"] } },
+        {
+          status: { in: ["SENT", "FOLLOW_UP"] },
+          followUpAt: { lte: now },
+          followUpCompletedAt: null,
+        },
+      ],
+    });
+  }
+
+  const orderBy: Prisma.ApplicationOrderByWithRelationInput[] =
+    options.sort === "created"
+      ? [{ createdAt: "desc" }]
+      : options.sort === "match"
+        ? [{ matchScore: { sort: "desc", nulls: "last" } }, { updatedAt: "desc" }]
+        : [{ updatedAt: "desc" }];
 
   return prisma.application.findMany({
-    where: {
-      userId,
-      ...(options.status ? { status: options.status } : {}),
-    },
-    orderBy: { updatedAt: "desc" },
+    where: { userId, ...(and.length > 0 ? { AND: and } : {}) },
+    orderBy,
     take: limit,
     select: {
       id: true,
       status: true,
       matchScore: true,
+      sendOutcomeUnknown: true,
+      sendStartedAt: true,
+      followUpAt: true,
+      followUpCompletedAt: true,
       createdAt: true,
       updatedAt: true,
       job: {

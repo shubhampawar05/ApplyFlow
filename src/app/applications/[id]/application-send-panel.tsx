@@ -1,11 +1,14 @@
 "use client";
 
+// Purpose: final send step with explicit confirmation, duplicate acknowledgement, and attachment preview.
+// Constraints: Gmail is called only by the server after the user confirms; never auto-sends or retries.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AttachmentChip } from "@/components/attachment-chip";
 import { Button } from "@/components/button";
 import { useToast } from "@/components/toast-provider";
+import { isSentOrLater } from "@/features/applications/application.schemas";
 import { getApiErrorMessage } from "@/lib/api/error-message";
 import { mediaUrl } from "@/lib/media/urls";
 
@@ -19,6 +22,9 @@ type DuplicateApplication = {
     applicationEmail: string | null;
   };
 };
+
+// Errors meaning the application's send state changed on the server; reload to show it.
+const sendStateErrorCodes = new Set(["SEND_IN_PROGRESS", "SEND_OUTCOME_UNKNOWN", "ALREADY_SENT"]);
 
 export function ApplicationSendPanel({
   applicationId,
@@ -45,7 +51,7 @@ export function ApplicationSendPanel({
   const [acknowledgedDuplicate, setAcknowledgedDuplicate] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
-  const [sent, setSent] = useState(applicationStatus === "SENT");
+  const [sent, setSent] = useState(isSentOrLater(applicationStatus));
   const hasDuplicates = duplicateApplications.length > 0;
   const canSubmit = confirmed && (!hasDuplicates || acknowledgedDuplicate);
 
@@ -74,13 +80,16 @@ export function ApplicationSendPanel({
       });
 
       const payload = (await response.json()) as {
-        error?: { message?: string; details?: { duplicates?: DuplicateApplication[] } };
+        error?: { code?: string; message?: string; details?: { duplicates?: DuplicateApplication[] } };
       };
 
       if (!response.ok) {
         const message = getApiErrorMessage(payload, "Gmail could not send this email. Your draft is still saved.");
         setError(message);
         showToast(message, "error");
+        if (payload.error?.code && sendStateErrorCodes.has(payload.error.code)) {
+          router.refresh();
+        }
         return;
       }
 
@@ -88,9 +97,11 @@ export function ApplicationSendPanel({
       showToast("Application email sent.");
       router.refresh();
     } catch {
-      const message = "Gmail could not send this email. Your draft is still saved.";
+      // The request may have reached the server, so reload to show the real send state.
+      const message = "We lost the connection while sending. Reloading to check whether the email went out.";
       setError(message);
       showToast(message, "error");
+      router.refresh();
     } finally {
       setPending(false);
     }

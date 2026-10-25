@@ -3,7 +3,7 @@
 ## Stack
 - Next.js with TypeScript.
 - React.
-- Tailwind CSS and shadcn/ui.
+- Plain CSS with shared design tokens in `src/app/globals.css` (Tailwind loaded for utilities only; shadcn/ui not used). See `docs/10-DESIGN-SPEC.md`.
 - PostgreSQL.
 - Prisma.
 - Zod.

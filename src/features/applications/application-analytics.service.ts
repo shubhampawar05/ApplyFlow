@@ -7,7 +7,7 @@ export async function getDashboardSummaryForUser(userId: string) {
 
   return {
     total: stats.total,
-    inProgress: stats.draft + stats.analyzed + stats.ready,
+    inProgress: stats.draft + stats.analyzed + stats.ready + stats.sending,
     sent: stats.sent + stats.followUp,
     outcomes: stats.interview + stats.offer,
     breakdown: stats,

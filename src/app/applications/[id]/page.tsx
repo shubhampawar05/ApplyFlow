@@ -1,3 +1,5 @@
+// Purpose: application detail page: step-by-step flow with job context rail, send, and tracking.
+// Constraints: server component; owner-scoped data only; sending requires explicit confirmation in the send panel.
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import {
@@ -11,13 +13,18 @@ import {
 } from "@/features/applications/application-flow-state";
 import { parseStoredMatchDetails } from "@/features/applications/application-match.service";
 import { getApplicationDetailForUser } from "@/features/applications/application.repository";
+import { followUpActiveStatuses, isSentOrLater } from "@/features/applications/application.schemas";
+import { isSendOutcomeUnknown } from "@/features/applications/application-send-state";
 import { getDefaultResumeWithProfile } from "@/features/resume/resume.repository";
 import { requireCurrentUser } from "@/features/auth/require-current-user";
 import { getGmailConnectionStatus } from "@/features/integrations/gmail/gmail.service";
+import { ApplicationContextRail } from "./application-context-rail";
 import { ApplicationDuplicateBlock } from "./application-duplicate-block";
 import { ApplicationEmailPanel } from "./application-email-panel";
 import { ApplicationFlowShell } from "./application-flow-shell";
+import { ApplicationFollowUpPanel } from "./application-follow-up-panel";
 import { ApplicationMatchPanel } from "./application-match-panel";
+import { ApplicationSendOutcomeBanner } from "./application-send-outcome-banner";
 import { ApplicationSendPanel } from "./application-send-panel";
 import { ApplicationStatusPanel } from "./application-status-panel";
 import { ApplicationTimeline } from "./application-timeline";
@@ -105,7 +112,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   }
 
   let sendBlockReason = "Generate and save an email draft before sending.";
-  if (extracted && selectedEmail && application.status !== "READY" && application.status !== "SENT") {
+  if (extracted && selectedEmail && application.status !== "READY" && !isSentOrLater(application.status)) {
     sendBlockReason = "Save your email draft to mark the application READY before sending.";
   } else if (extracted && selectedEmail && !gmailStatus.connected) {
     sendBlockReason = "Connect Gmail in Settings before sending this application.";
@@ -149,12 +156,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   const extractReviewPanel = (
     <section className="flow-section" id="section-job-review">
       {isBlockedByDuplicate ? <ApplicationDuplicateBlock duplicates={duplicateSummaries} /> : null}
-      {job.screenshotStorageKey ? (
-        <ApplicationScreenshotPreview
-          fileName={screenshotLabel(job.screenshotStorageKey)}
-          jobId={job.id}
-        />
-      ) : null}
       {!extracted ? (
         <div className="empty-card">
           <h2>Extract job details to begin review.</h2>
@@ -213,8 +214,13 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
     />
   ) : null;
 
-  const sendPanel =
-    extracted && selectedEmail && !isBlockedByDuplicate ? (
+  const sendOutcomeUnknown = isSendOutcomeUnknown(application);
+  const sendPanel = application.status === "SENDING" ? (
+    <section className="settings-section" id="section-send">
+      <p className="section-label">Send application</p>
+      <ApplicationSendOutcomeBanner applicationId={application.id} outcomeUnknown={sendOutcomeUnknown} />
+    </section>
+  ) : extracted && selectedEmail && !isBlockedByDuplicate ? (
       <ApplicationSendPanel
         applicationId={application.id}
         applicationStatus={application.status}
@@ -232,9 +238,16 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
     ) : null;
 
   const trackingPanel =
-    application.status === "SENT" ? (
+    isSentOrLater(application.status) ? (
       <>
         <ApplicationStatusPanel applicationId={application.id} currentStatus={application.status} />
+        <ApplicationFollowUpPanel
+          active={followUpActiveStatuses.some((status) => status === application.status)}
+          applicationId={application.id}
+          followUpAt={application.followUpAt?.toISOString() ?? null}
+          followUpCompletedAt={application.followUpCompletedAt?.toISOString() ?? null}
+          key={`${application.followUpAt?.toISOString() ?? "none"}-${application.updatedAt.toISOString()}`}
+        />
         <ApplicationTimeline events={application.events} />
       </>
     ) : null;
@@ -244,8 +257,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
       <p className="eyebrow">Application</p>
       <h1>{job.title ?? "Review the job posting"}</h1>
       <p className="lede">
-        Status: <strong>{application.status.replaceAll("_", " ")}</strong>. Completed steps stay in the progress bar
-        above — only your current step is shown below.
+        {job.company ?? "Company not found"} · <strong>{application.status.replaceAll("_", " ")}</strong>
       </p>
 
       <ApplicationFlowShell
@@ -257,6 +269,21 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           email: emailPanel,
           send: sendPanel,
         }}
+        rail={
+          <ApplicationContextRail
+            facts={{
+              jobId: job.id,
+              screenshotFileName: job.screenshotStorageKey ? screenshotLabel(job.screenshotStorageKey) : null,
+              company: job.company,
+              title: job.title,
+              recipient: job.applicationEmail,
+              matchScore: application.matchScore,
+              status: application.status,
+              followUpAt: application.followUpAt,
+              followUpCompletedAt: application.followUpCompletedAt,
+            }}
+          />
+        }
         steps={flow.steps}
         tracking={trackingPanel}
       />
